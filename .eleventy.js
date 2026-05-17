@@ -23,6 +23,7 @@ module.exports = function (eleventyConfig) {
       includes: "_includes",
       data: "_data",
     },
+    pathPrefix: "/ai-success-story/",
     markdownTemplateEngine: "njk",
     htmlTemplateEngine: "njk",
     templateFormats: ["md", "njk", "html"],

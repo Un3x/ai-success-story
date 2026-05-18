@@ -9,8 +9,8 @@
   "scripts": {
     "start": "node server.js",
     "dev:server": "node --watch server.js",
-    "build": "eleventy",
-    "dev": "eleventy --serve",
+    "build:legacy": "eleventy",
+    "dev:legacy": "eleventy --serve",
     "clean": "rm -rf _site"
   },
   "devDependencies": {

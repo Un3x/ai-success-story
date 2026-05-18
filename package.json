@@ -8,13 +8,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "dev:server": "node --watch server.js",
-    "build:legacy": "eleventy",
-    "dev:legacy": "eleventy --serve",
-    "clean": "rm -rf _site"
-  },
-  "devDependencies": {
-    "@11ty/eleventy": "^3.0.0"
+    "dev:server": "node --watch server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",

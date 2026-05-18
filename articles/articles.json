@@ -1,5 +1,0 @@
-{
-  "layout": "default.njk",
-  "permalink": "/post/{{ page.fileSlug }}/index.html",
-  "eleventyExcludeFromCollections": false
-}

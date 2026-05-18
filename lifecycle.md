@@ -28,11 +28,11 @@ Before Step 4 of `setup.md` runs, `vision.md` and `state.md` exist only under `t
 
 ### Slot delimiter (C3)
 
-Slots — placeholders that the setup-runner substitutes with project-specific values — use Mustache-style `{{X}}` delimiters. Examples: `{{PROJECT}}`, `{{LINEAR_PROJECT_ID}}`, `{{DATE}}`.
+Slots — placeholders that the setup-runner substitutes with project-specific values — use Mustache-style `{{X}}` delimiters. Examples: `{{PROJECT}}`, `{{DATE}}`.
 
 **Rule: slots are the only `{{...}}` tokens; nothing else uses double braces.**
 
-The square-bracket form `[X]` remains free for use as prose, documentation reference, or rhetorical placeholder. For example, the CEO template's generation footer mentions `[PROJECT]` and `[LINEAR_PROJECT_ID]` as documentation references; these are not slot markers and are not substituted.
+The square-bracket form `[X]` remains free for use as prose, documentation reference, or rhetorical placeholder. For example, the CEO template's generation footer mentions `{{PROJECT}}` as a documentation reference; this is not a slot marker at runtime and is not substituted.
 
 ## Task anatomy
 

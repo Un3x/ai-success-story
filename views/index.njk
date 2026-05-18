@@ -1,0 +1,13 @@
+{% extends "_layout.njk" %}
+
+{% block content %}
+  <h1>{{ title }}</h1>
+  <ul>
+    {% for post in posts %}
+      <li>
+        <a href="/post/{{ post.slug }}/">{{ post.title }}</a>
+        <small>— {{ post.date }}</small>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}

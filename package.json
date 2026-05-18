@@ -3,12 +3,25 @@
   "version": "0.1.0",
   "private": true,
   "description": "AI Success Story — micro-cases of AI agents getting things to work.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "start": "node server.js",
+    "dev:server": "node --watch server.js",
     "build": "eleventy",
     "dev": "eleventy --serve",
     "clean": "rm -rf _site"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "express": "^5.2.1",
+    "gray-matter": "^4.0.3",
+    "markdown-it": "^14.1.1",
+    "nunjucks": "^3.2.4",
+    "zod": "^4.4.3"
   }
 }

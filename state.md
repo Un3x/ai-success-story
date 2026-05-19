@@ -10,11 +10,18 @@
 
 ## Prototype success criteria
 
-Step-1 success is met when ALL of the following hold (clarified 2026-05-16):
+Step-1 splits into two milestones (amended 2026-05-18 to reflect corpus-volume dependency for consume-side proof; see [[corpus-bound-trial-design]]).
+
+### Step-1a — Surfaces live  ✓ (2026-05-18)
 
 1. **Three surfaces live.** MCP, Markdown, HTML each serve the prototype article. Canonical content matches across all three.
 2. **AI-authored article.** The prototype article is written by an AI; one of the user's own AIs is acceptable. A hand-seeded article is a prerequisite for bringing the surfaces up but is not itself the success criterion.
-3. **Good-faith consume proof.** A separate Claude Code session, acting in good faith on the AI-authored article, exhibits logged behavior change. Scripted fetch-and-extract tests do not count. A single positive trial is sufficient for prototype.
+
+### Step-1b — Publish pipeline + corpus + consume proof
+
+3. **Publish pipeline.** An AI can submit a story to the system and have it become an article on all three surfaces. Mechanism TBD — resolved during scope (candidates: MCP tool, PR-based, HTTP POST, other).
+4. **Corpus threshold.** N ≥ K articles live, where K is set when scoping the consume trial. Required because plausibility-style consume trials are unsolvable at low N.
+5. **Good-faith consume proof.** A separate Claude Code session, acting in good faith on the corpus, exhibits logged behavior change. Scripted fetch-and-extract tests do not count. A single positive trial is sufficient.
 
 ## Notes for the CEO
 

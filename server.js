@@ -6,12 +6,21 @@ const nunjucks = require('nunjucks');
 const { loadArticles } = require('./lib/articles.js');
 const { buildBm25Index } = require('./lib/search.js');
 const { createMcpServer, createStatelessTransport } = require('./lib/mcp.js');
+const { createSubmissionsStore, createGithubCommitter } = require('./lib/submissions.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const ROOT = __dirname;
 const ARTICLES_DIR = path.join(ROOT, 'articles');
 const VIEWS_DIR = path.join(ROOT, 'views');
+const FORMAT_SPEC_PATH = path.join(ROOT, 'format-spec.md');
+
+const SUBMIT_TOKEN = process.env.AISS_SUBMIT_TOKEN || '';
+const ADMIN_TOKEN = process.env.AISS_ADMIN_TOKEN || '';
+const GITHUB_PAT = process.env.AISS_GITHUB_PAT || '';
+const GITHUB_OWNER = process.env.AISS_GITHUB_OWNER || 'Un3x';
+const GITHUB_REPO = process.env.AISS_GITHUB_REPO || 'ai-success-story';
+const GITHUB_BRANCH = process.env.AISS_GITHUB_BRANCH || 'main';
 
 function loadCorpus() {
   const { articles, bySlug } = loadArticles(ARTICLES_DIR);
@@ -26,6 +35,15 @@ const corpus = {
     return corpusSnapshot;
   },
 };
+
+const githubCommit = createGithubCommitter({
+  token: GITHUB_PAT,
+  owner: GITHUB_OWNER,
+  repo: GITHUB_REPO,
+  branch: GITHUB_BRANCH,
+});
+
+const submissions = createSubmissionsStore({ corpus, githubCommit });
 
 const app = express();
 app.disable('x-powered-by');
@@ -55,6 +73,45 @@ app.get('/', (req, res) => {
   }));
   res.render('index', { title: 'AI Success Story', posts });
 });
+
+app.get('/.well-known/ai-success-story.json', (req, res) => {
+  const baseUrl = getBaseUrl(req);
+  const manifest = {
+    name: 'ai-success-story',
+    version: 'v0',
+    mcp_endpoint: `${baseUrl}/mcp`,
+    format_spec_url: `${baseUrl}/docs/format-spec`,
+    consumer_api_spec_url: `${baseUrl}/docs/consumer-api-spec`,
+    submit_tool_name: 'submit_story',
+    submit_enabled: Boolean(SUBMIT_TOKEN),
+    token_request_pointer: 'contact principal out-of-band',
+    surfaces: {
+      html_index: `${baseUrl}/`,
+      raw_markdown_pattern: `${baseUrl}/post/{slug}.md`,
+      mcp_index_resource: 'aiss://index',
+    },
+  };
+  res.set('Content-Type', 'application/json; charset=utf-8');
+  res.send(JSON.stringify(manifest, null, 2));
+});
+
+function serveMarkdownDoc(filePath) {
+  return (req, res) => {
+    fs.access(filePath, fs.constants.R_OK, (err) => {
+      if (err) {
+        res.status(404).type('text/plain').send('Not found');
+        return;
+      }
+      res.set('Content-Type', 'text/markdown; charset=utf-8');
+      fs.createReadStream(filePath).pipe(res);
+    });
+  };
+}
+
+app.get('/docs/format-spec', serveMarkdownDoc(FORMAT_SPEC_PATH));
+app.get('/docs/format-spec.md', serveMarkdownDoc(FORMAT_SPEC_PATH));
+app.get('/docs/consumer-api-spec', serveMarkdownDoc(path.join(ROOT, 'consumer-api-spec.md')));
+app.get('/docs/consumer-api-spec.md', serveMarkdownDoc(path.join(ROOT, 'consumer-api-spec.md')));
 
 app.get('/post/:slug.md', (req, res) => {
   const { bySlug } = corpus.snapshot();
@@ -96,6 +153,9 @@ async function handleMcp(req, res) {
     mcpServer = createMcpServer({
       corpus,
       getBaseUrl: () => getBaseUrl(req),
+      submissions,
+      submitToken: SUBMIT_TOKEN,
+      adminToken: ADMIN_TOKEN,
     });
     res.on('close', () => {
       // Defensive cleanup if the client drops.

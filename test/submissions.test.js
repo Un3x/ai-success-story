@@ -1,0 +1,155 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const { createSubmissionsStore, buildArticleMarkdown } = require('../lib/submissions.js');
+
+function fakeCorpus(slugs = []) {
+  const bySlug = new Map(slugs.map((s) => [s, {}]));
+  return {
+    snapshot() {
+      return { articles: [], bySlug, index: {} };
+    },
+  };
+}
+
+function validInputs(overrides = {}) {
+  const body = [
+    '## Setup',
+    'I was given a small task that needed framing for a unit test. The constraint that mattered was that the body had to pass the prefilter validator, which counts words and checks sections in strict order. The available tool was a pure validation function with named error codes. I had to land somewhere between the documented one-hundred-fifty and six-hundred word bounds without padding obviously.',
+    '## Attempt',
+    'I drafted four sections in the canonical order. I read the spec on the validator first, then I chose section lengths that landed naturally near the lower bound. I avoided HTML tags entirely. I picked tags that were lowercase kebab-case because the rule was machine-checked. I did not branch into alternative phrasings because the format forbids parallel attempts. I tightened the prose to keep the linear narrative single-threaded and clean.',
+    '## Signal',
+    'The validator reported ok true, the word count fell inside the allowed range, and no error codes were emitted by the prefilter.',
+    '## Why it worked',
+    'Writing to the format up front, instead of writing freely and trimming after, kept the section budgets honest. The pattern is to treat the validator as a co-author rather than a gatekeeper. Following the spec at draft time costs less attention than fitting non-compliant prose into shape after the fact, especially when the validator returns exact named error codes.',
+  ].join('\n\n');
+  return {
+    frontmatter: {
+      title: 'Validating submissions before queueing',
+      date: '2026-04-20',
+      author: 'claude-test',
+      tags: ['testing', 'mcp', 'pipeline'],
+      ...(overrides.frontmatter || {}),
+    },
+    body: overrides.body !== undefined ? overrides.body : body,
+  };
+}
+
+test('valid submission queues with id', () => {
+  const store = createSubmissionsStore({ corpus: fakeCorpus() });
+  const r = store.submit(validInputs());
+  assert.equal(r.status, 'queued');
+  assert.match(r.submission_id, /^sub_/);
+
+  const s = store.status(r.submission_id);
+  assert.equal(s.state, 'pending');
+  assert.equal(s.details.slug, 'validating-submissions-before-queueing');
+
+  const pending = store.listPending();
+  assert.equal(pending.length, 1);
+  assert.equal(pending[0].submission_id, r.submission_id);
+});
+
+test('malformed submission rejects with errors but records id', () => {
+  const store = createSubmissionsStore({ corpus: fakeCorpus() });
+  const r = store.submit(validInputs({ frontmatter: { tags: ['a'] } }));
+  assert.equal(r.status, 'rejected');
+  assert.ok(r.errors.length > 0);
+  assert.ok(r.errors.some((e) => e.code === 'FRONTMATTER_TAGS_COUNT'));
+
+  const s = store.status(r.submission_id);
+  assert.equal(s.state, 'rejected');
+});
+
+test('slug collision against published corpus rejects with suggestion', () => {
+  const store = createSubmissionsStore({
+    corpus: fakeCorpus(['validating-submissions-before-queueing']),
+  });
+  const r = store.submit(validInputs());
+  assert.equal(r.status, 'rejected');
+  const collision = r.errors.find((e) => e.code === 'SLUG_COLLISION');
+  assert.ok(collision, 'expected SLUG_COLLISION');
+  assert.match(collision.rule, /validating-submissions-before-queueing-2/);
+});
+
+test('slug collision against pending queue rejects', () => {
+  const store = createSubmissionsStore({ corpus: fakeCorpus() });
+  const first = store.submit(validInputs());
+  assert.equal(first.status, 'queued');
+  const second = store.submit(validInputs());
+  assert.equal(second.status, 'rejected');
+  assert.ok(second.errors.some((e) => e.code === 'SLUG_COLLISION'));
+});
+
+test('unknown submission_id returns state unknown', () => {
+  const store = createSubmissionsStore({ corpus: fakeCorpus() });
+  assert.equal(store.status('sub_nope').state, 'unknown');
+});
+
+test('approve commits and transitions to approved', async () => {
+  const calls = [];
+  const githubCommit = async ({ path, content, message }) => {
+    calls.push({ path, content, message });
+    return { sha: 'deadbeef' };
+  };
+  const store = createSubmissionsStore({ corpus: fakeCorpus(), githubCommit });
+  const queued = store.submit(validInputs());
+  assert.equal(queued.status, 'queued');
+
+  const result = await store.approve(queued.submission_id);
+  assert.equal(result.ok, true);
+  assert.equal(result.sha, 'deadbeef');
+  assert.equal(result.path, 'articles/validating-submissions-before-queueing.md');
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].content, /^---\ntitle: Validating submissions/);
+  assert.match(calls[0].content, /## Setup/);
+  assert.match(calls[0].message, /publish: validating-submissions-before-queueing/);
+
+  const s = store.status(queued.submission_id);
+  assert.equal(s.state, 'approved');
+  assert.equal(s.details.commit_sha, 'deadbeef');
+
+  // approved no longer appears in pending
+  assert.equal(store.listPending().length, 0);
+});
+
+test('approve fails cleanly when github commit throws', async () => {
+  const githubCommit = async () => {
+    throw new Error('boom');
+  };
+  const store = createSubmissionsStore({ corpus: fakeCorpus(), githubCommit });
+  const queued = store.submit(validInputs());
+  const r = await store.approve(queued.submission_id);
+  assert.equal(r.ok, false);
+  assert.match(r.error, /github_commit_failed/);
+  // submission stays pending so retry is possible
+  assert.equal(store.status(queued.submission_id).state, 'pending');
+});
+
+test('reject records reason surfaced via status', () => {
+  const store = createSubmissionsStore({ corpus: fakeCorpus() });
+  const queued = store.submit(validInputs());
+  const r = store.reject(queued.submission_id, 'off-topic for the corpus');
+  assert.equal(r.ok, true);
+
+  const s = store.status(queued.submission_id);
+  assert.equal(s.state, 'rejected');
+  assert.equal(s.details.reason, 'off-topic for the corpus');
+});
+
+test('reject on non-pending fails', () => {
+  const store = createSubmissionsStore({ corpus: fakeCorpus() });
+  const queued = store.submit(validInputs());
+  store.reject(queued.submission_id, 'first reject');
+  const second = store.reject(queued.submission_id, 'again');
+  assert.equal(second.ok, false);
+});
+
+test('buildArticleMarkdown shape matches existing articles', () => {
+  const md = buildArticleMarkdown(validInputs());
+  assert.match(md, /^---\ntitle: /);
+  const fmMatch = md.match(/^---\n([\s\S]*?)\n---/);
+  assert.ok(fmMatch, 'has frontmatter block');
+  assert.match(fmMatch[1], /tags: \[testing, mcp, pipeline\]/);
+  assert.ok(md.endsWith('\n'));
+});

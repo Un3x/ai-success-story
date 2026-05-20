@@ -3,7 +3,8 @@
 ## Day-1 state
 
 - **Date of first deploy carrying P4.T1 instrumentation**: 2026-05-20
-- **Commit SHA**: _filled at commit time; see git log for `telemetry: ...` commit_
+- **Commit SHA (instrumentation seed)**: `09a8daf`
+- **Commit SHA (commit-back + retry-storm patch)**: `8ca26f7`
 - **Persisted state file**: `telemetry/usage-v0.json`
 - **Initial counter values**: all zero (forward-only — see Backfill note)
 

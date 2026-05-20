@@ -7,6 +7,7 @@ const { loadArticles } = require('./lib/articles.js');
 const { buildBm25Index } = require('./lib/search.js');
 const { createMcpServer, createStatelessTransport } = require('./lib/mcp.js');
 const { createSubmissionsStore, createGithubCommitter } = require('./lib/submissions.js');
+const { createTelemetry, classifyUa, classifyRoute, defaultFetchSnapshot } = require('./lib/telemetry.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -17,10 +18,12 @@ const FORMAT_SPEC_PATH = path.join(ROOT, 'format-spec.md');
 
 const SUBMIT_TOKEN = process.env.AISS_SUBMIT_TOKEN || '';
 const ADMIN_TOKEN = process.env.AISS_ADMIN_TOKEN || '';
+const STATS_TOKEN = process.env.AISS_STATS_TOKEN || '';
 const GITHUB_PAT = process.env.AISS_GITHUB_PAT || '';
 const GITHUB_OWNER = process.env.AISS_GITHUB_OWNER || 'Un3x';
 const GITHUB_REPO = process.env.AISS_GITHUB_REPO || 'ai-success-story';
 const GITHUB_BRANCH = process.env.AISS_GITHUB_BRANCH || 'main';
+const TELEMETRY_SNAPSHOT_KEY = process.env.AISS_TELEMETRY_SNAPSHOT_KEY || 'telemetry/usage-v0.json';
 
 function loadCorpus() {
   const { articles, bySlug } = loadArticles(ARTICLES_DIR);
@@ -45,6 +48,17 @@ const githubCommit = createGithubCommitter({
 
 const submissions = createSubmissionsStore({ corpus, githubCommit });
 
+const telemetry = createTelemetry({
+  githubCommit,
+  fetchSnapshot: defaultFetchSnapshot({
+    owner: GITHUB_OWNER,
+    repo: GITHUB_REPO,
+    branch: GITHUB_BRANCH,
+    snapshotKey: TELEMETRY_SNAPSHOT_KEY,
+  }),
+  snapshotKey: TELEMETRY_SNAPSHOT_KEY,
+});
+
 const app = express();
 app.disable('x-powered-by');
 app.set('strict routing', true);
@@ -55,6 +69,20 @@ nunjucks.configure(VIEWS_DIR, {
   noCache: process.env.NODE_ENV !== 'production',
 });
 app.set('view engine', 'njk');
+
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    const route = classifyRoute(req);
+    telemetry.recordHttp({
+      route,
+      method: req.method,
+      status: res.statusCode,
+      uaBucket: classifyUa(req.headers['user-agent'], route),
+    });
+    telemetry.flushIfDue().catch((e) => console.error('telemetry flush failed:', e && e.message ? e.message : e));
+  });
+  next();
+});
 
 function getBaseUrl(req) {
   const envBase = process.env.PUBLIC_BASE_URL;
@@ -149,6 +177,20 @@ app.get('/post/:slug', (req, res) => {
   res.redirect(301, `/post/${req.params.slug}/`);
 });
 
+app.get('/stats', (req, res) => {
+  if (!STATS_TOKEN) {
+    res.status(503).json({ error: 'stats endpoint disabled' });
+    return;
+  }
+  const provided = req.headers['x-aiss-stats-token'];
+  if (typeof provided !== 'string' || provided.length === 0 || provided !== STATS_TOKEN) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  res.set('Cache-Control', 'no-store');
+  res.json(telemetry.snapshot());
+});
+
 // MCP — stateless Streamable HTTP. Fresh transport + server per request.
 app.use('/mcp', express.json({ limit: '4mb' }));
 
@@ -163,6 +205,7 @@ async function handleMcp(req, res) {
       submissions,
       submitToken: SUBMIT_TOKEN,
       adminToken: ADMIN_TOKEN,
+      telemetry,
     });
     res.on('close', () => {
       // Defensive cleanup if the client drops.
@@ -198,6 +241,7 @@ const server = app.listen(PORT, HOST, () => {
 function shutdown(signal) {
   // eslint-disable-next-line no-console
   console.log(`Received ${signal}, shutting down…`);
+  telemetry.shutdownFlush().catch((e) => console.error('telemetry shutdownFlush failed:', e && e.message ? e.message : e));
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(1), 5000).unref();
 }

@@ -1,0 +1,178 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+
+const { createTelemetry, classifyUa, classifyRoute } = require('../lib/telemetry.js');
+
+const silentLogger = { warn: () => {}, error: () => {}, log: () => {} };
+
+test('classifyUa returns mcp-client for /mcp route regardless of UA', () => {
+  assert.equal(classifyUa('Mozilla/5.0', '/mcp'), 'mcp-client');
+  assert.equal(classifyUa('', '/mcp'), 'mcp-client');
+});
+
+test('classifyUa buckets known UA patterns', () => {
+  assert.equal(classifyUa('Claude-User/1.0', '/'), 'mcp-client');
+  assert.equal(classifyUa('anthropic-mcp-cli', '/'), 'mcp-client');
+  assert.equal(classifyUa('Googlebot/2.1', '/'), 'bot');
+  assert.equal(classifyUa('curl/8.0', '/'), 'bot');
+  assert.equal(classifyUa('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', '/'), 'browser');
+  assert.equal(classifyUa('weird-thing/1', '/'), 'other');
+  assert.equal(classifyUa('', '/'), 'other');
+  assert.equal(classifyUa(undefined, '/'), 'other');
+});
+
+test('classifyRoute uses req.route.path for known routes; others fall back to "other"', () => {
+  assert.equal(classifyRoute({ route: { path: '/' } }), '/');
+  assert.equal(classifyRoute({ route: { path: '/post/:slug/' } }), '/post/:slug/');
+  assert.equal(classifyRoute({ route: { path: '/post/:slug.md' } }), '/post/:slug.md');
+  assert.equal(classifyRoute({ route: { path: '/stats' } }), '/stats');
+  assert.equal(classifyRoute({ route: { path: '/unknown-thing' } }), 'other');
+  assert.equal(classifyRoute({}), 'other');
+  assert.equal(classifyRoute({ baseUrl: '/mcp' }), '/mcp');
+});
+
+test('recordHttp + recordMcpCall increment counters as expected', async () => {
+  const telemetry = createTelemetry({ logger: silentLogger });
+  await telemetry.ready;
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  telemetry.recordHttp({ route: '/post/:slug/', method: 'GET', status: 404, uaBucket: 'bot' });
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: true });
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: false });
+  telemetry.recordMcpCall({ tool: 'fetch_story', ok: true });
+
+  const snap = telemetry.snapshot();
+  assert.equal(snap.http.by_route['GET /']['200'], 2);
+  assert.equal(snap.http.by_route['GET /post/:slug/']['404'], 1);
+  assert.equal(snap.http.by_ua_bucket.browser, 2);
+  assert.equal(snap.http.by_ua_bucket.bot, 1);
+  assert.equal(snap.mcp.by_tool.search_stories.ok, 1);
+  assert.equal(snap.mcp.by_tool.search_stories.err, 1);
+  assert.equal(snap.mcp.by_tool.fetch_story.ok, 1);
+  assert.equal(snap.mcp.total_calls, 3);
+});
+
+test('flushIfDue is throttled: not due until ceiling or interval reached', async () => {
+  const calls = [];
+  const githubCommit = async ({ path, content, message }) => {
+    calls.push({ path, content, message });
+    return { sha: 'aaaa' };
+  };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 60_000,
+    flushMutationCeiling: 3,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r1 = await telemetry.flushIfDue();
+  assert.equal(r1.skipped, true, 'first flush should be skipped: under ceiling, under interval');
+  assert.equal(calls.length, 0);
+
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r2 = await telemetry.flushIfDue();
+  assert.equal(r2.ok, true);
+  assert.equal(calls.length, 1, 'reaching ceiling fires one commit');
+  assert.match(calls[0].path, /telemetry\/usage-v0\.json/);
+});
+
+test('concurrent flushIfDue invocations coalesce into a single commit', async () => {
+  let calls = 0;
+  let resolveCommit;
+  const commitPromise = new Promise((res) => { resolveCommit = res; });
+  const githubCommit = async () => {
+    calls += 1;
+    await commitPromise;
+    return { sha: 'bbbb' };
+  };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 0,
+    flushMutationCeiling: 1,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+
+  const p1 = telemetry.flushIfDue();
+  const p2 = telemetry.flushIfDue();
+  const p3 = telemetry.flushIfDue();
+  assert.equal(p1, p2, 'concurrent flush returns same in-flight promise');
+  assert.equal(p2, p3);
+  resolveCommit({ sha: 'bbbb' });
+  await Promise.all([p1, p2, p3]);
+  assert.equal(calls, 1, 'only one underlying commit fired');
+});
+
+test('flush failure resets in-flight flag so next attempt is allowed', async () => {
+  let attempts = 0;
+  const githubCommit = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error('network down');
+    return { sha: 'cccc' };
+  };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 0,
+    flushMutationCeiling: 1,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r1 = await telemetry.flushIfDue();
+  assert.equal(r1.ok, false);
+
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r2 = await telemetry.flushIfDue();
+  assert.equal(r2.ok, true);
+  assert.equal(attempts, 2);
+});
+
+test('cold-start fetch failure falls back to zero counters without throwing', async () => {
+  const fetchSnapshot = async () => { throw new Error('404 from raw.githubusercontent'); };
+  const telemetry = createTelemetry({
+    fetchSnapshot,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  const snap = telemetry.snapshot();
+  assert.equal(snap.mcp.total_calls, 0);
+  assert.deepEqual(snap.http.by_route, {});
+  assert.deepEqual(snap.mcp.by_tool, {});
+});
+
+test('cold-start fetch resumes counters from the remote snapshot', async () => {
+  const remote = {
+    version: 'v0',
+    snapshot_key: 'telemetry/usage-v0.json',
+    window: { since: '2026-05-01T00:00:00.000Z', now: '2026-05-19T00:00:00.000Z', last_persisted_at: '2026-05-19T00:00:00.000Z' },
+    http: { by_route: { 'GET /': { '200': 42 } }, by_ua_bucket: { browser: 42 } },
+    mcp: { by_tool: { search_stories: { ok: 7, err: 1 } }, total_calls: 8 },
+  };
+  const fetchSnapshot = async () => remote;
+  const telemetry = createTelemetry({ fetchSnapshot, logger: silentLogger });
+  await telemetry.ready;
+  const snap = telemetry.snapshot();
+  assert.equal(snap.window.since, '2026-05-01T00:00:00.000Z');
+  assert.equal(snap.http.by_route['GET /']['200'], 42);
+  assert.equal(snap.mcp.by_tool.search_stories.ok, 7);
+  assert.equal(snap.mcp.total_calls, 8);
+});
+
+test('shutdownFlush commits even when not due, when mutations are pending', async () => {
+  const calls = [];
+  const githubCommit = async (x) => { calls.push(x); return { sha: 'dddd' }; };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 60_000,
+    flushMutationCeiling: 1000,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r = await telemetry.shutdownFlush();
+  assert.equal(r.ok, true);
+  assert.equal(calls.length, 1);
+});

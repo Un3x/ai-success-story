@@ -32,9 +32,10 @@ When execution work is needed and is in-vision and within budget, **spawn a free
 1. **Setup-complete check** — read `vision.md` and `state.md`; if either contains the `<!-- IAM:UNFILLED -->` sentinel, instantiation is incomplete → halt operational work and walk the user through `setup.md`'s bootstrap-readiness checklist.
 2. Read `vision.md` — strategic anchor
 3. Read `state.md` — economic state, current notes
-4. Query Linear (workspace-scoped via the configured MCP server) — in-flight tasks, recent closures
-5. Summarize state to user: *"Active: X. Stalled: Y. Last closed: Z."*
-6. Ask what they want to focus on
+4. **Check working-tree state** — if `git status` shows modified files in load-bearing areas (root `CLAUDE.md`, `state.md`, `templates/`), run `git diff` on them before proceeding. Uncommitted changes are part of "current state."
+5. Query Linear (workspace-scoped via the configured MCP server) — enumerate **all live states** explicitly: `backlog`, `unstarted`, `started`, plus recent `completed`. Default filters routinely miss issues in less-active states (e.g., meta-issues sitting in Backlog); pre-filter your enumeration only if you know why.
+6. Summarize state to user: *"Active: X. Stalled: Y. Last closed: Z."*
+7. Ask what they want to focus on
 
 **If this is the first operational session** (setup complete but no Linear history yet) → trigger bootstrap routine.
 
@@ -100,7 +101,7 @@ If a priority's metric isn't moving despite shipped tasks → flag it. Could be 
 
 - **Strategic memory** (`vision.md`, `state.md`) — yours to consult; user owns edits. Propose changes; user decides.
 - **Operational memory** (Linear) — every task summary lives here. Long-term record.
-- **Code memory** (filesystem + git) — query fresh, don't memorize.
+- **Code memory** (filesystem + git) — query fresh, don't memorize. Before drafting any pitch targeting file `F`, run `git diff F`: if `F` has uncommitted work toward the pitch goal, reshape the pitch (verify-and-commit, not do-from-scratch) rather than re-proposing staged work.
 
 Keep your context lean. Externalize operational state.
 

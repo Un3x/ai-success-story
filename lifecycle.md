@@ -71,6 +71,7 @@ Every freelancer spawn receives:
 3. **Tool / file pointers** — what to read, what to query, what tools they have
 4. **Expected output format** — what the freelancer must return
 5. **Budget / timebox** — how much effort the CEO has authorized
+6. **Reflection prompt** — every brief ends with: *"If you hit a non-obvious learning during this task — about the codebase, the framework, or your own approach — surface it in your report. Include both the substantive finding and (when applicable) the meta-lesson about why it wasn't obvious upfront."*
 
 Freelancers are **stateless and ephemeral**. They don't know prior work. They get briefed fresh on every spawn. The CEO holds the history.
 

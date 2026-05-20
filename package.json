@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "AI Success Story — micro-cases of AI agents getting things to work.",
+  "license": "MIT",
   "engines": {
     "node": ">=20"
   },

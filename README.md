@@ -80,7 +80,7 @@ What the prototype revealed: corpus alone doesn't trigger consumption — the in
 
 ## License
 
-Not yet picked. Until one is added, default copyright applies.
+[MIT](./LICENSE).
 
 ## Contributing
 

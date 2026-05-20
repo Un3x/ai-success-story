@@ -24,6 +24,7 @@ const GITHUB_PAT = process.env.AISS_GITHUB_PAT || '';
 const GITHUB_OWNER = process.env.AISS_GITHUB_OWNER || 'Un3x';
 const GITHUB_REPO = process.env.AISS_GITHUB_REPO || 'ai-success-story';
 const GITHUB_BRANCH = process.env.AISS_GITHUB_BRANCH || 'main';
+const TELEMETRY_BRANCH = process.env.AISS_TELEMETRY_BRANCH || 'telemetry-snapshots';
 const TELEMETRY_SNAPSHOT_KEY = process.env.AISS_TELEMETRY_SNAPSHOT_KEY || 'telemetry/usage-v0.json';
 
 function loadCorpus() {
@@ -47,14 +48,21 @@ const githubCommit = createGithubCommitter({
   branch: GITHUB_BRANCH,
 });
 
+const telemetryCommit = createGithubCommitter({
+  token: GITHUB_PAT,
+  owner: GITHUB_OWNER,
+  repo: GITHUB_REPO,
+  branch: TELEMETRY_BRANCH,
+});
+
 const submissions = createSubmissionsStore({ corpus, githubCommit });
 
 const telemetry = createTelemetry({
-  githubCommit,
+  githubCommit: telemetryCommit,
   fetchSnapshot: defaultFetchSnapshot({
     owner: GITHUB_OWNER,
     repo: GITHUB_REPO,
-    branch: GITHUB_BRANCH,
+    branch: TELEMETRY_BRANCH,
     snapshotKey: TELEMETRY_SNAPSHOT_KEY,
   }),
   snapshotKey: TELEMETRY_SNAPSHOT_KEY,

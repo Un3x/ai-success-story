@@ -49,10 +49,10 @@ Per-route counters are keyed `METHOD ROUTE` (e.g. `GET /post/:slug/`) and bucket
 
 ## Persistence + flush cadence
 
-- Snapshot lives at `telemetry/usage-v0.json` in this repo, committed via the GitHub Contents API (same path as the publish pipeline).
+- Snapshot lives at `telemetry/usage-v0.json` on the **`telemetry-snapshots` branch** in this repo (separated from `main` 2026-05-20 per AI-20 so telemetry commits do not trigger Heroku's single-branch auto-deploy). Article publishes still target `main` via the same Contents API path.
 - Flush fires when **either** ≥ 5 minutes since last flush AND ≥ 1 mutation, **or** ≥ 50 mutations since last flush. Plus best-effort flush on SIGTERM.
 - Tunable via `TELEMETRY_FLUSH_INTERVAL_MS` and `TELEMETRY_FLUSH_MUTATION_CEILING` env vars.
-- On boot, the process fetches the snapshot from `raw.githubusercontent.com` and resumes counts. Network/parse failure logs a warning and falls back to zero — boot is never blocked.
+- On boot, the process fetches the snapshot from `raw.githubusercontent.com` on the `telemetry-snapshots` branch and resumes counts. Network/parse failure logs a warning and falls back to zero — boot is never blocked.
 
 ## How to read `/stats`
 
@@ -72,6 +72,7 @@ curl -H "X-AISS-Stats-Token: $AISS_STATS_TOKEN" https://<deployment>/stats
 4. **Backfill: forward-only.** No mining of Logplex history (Heroku retains ~1500 lines / 1 week — too lossy to baseline against).
 5. **A failed GitHub commit drops that flush window's mutations from the persistent snapshot** but the in-memory counters keep growing; the next successful flush captures everything since the last successful one. A long network outage paired with a dyno restart loses the unsaved window — accepted at prototype scale.
 6. **Flush failures reset the cadence trigger** (`mutationsSinceFlush` and `lastFlushAt`) so a sustained failure does not produce one PUT attempt per request. Worst case the snapshot stops landing for `flushIntervalMs` × N cycles. Single `warn` log per failure makes this externally visible.
+7. **Pre-fix telemetry commits on `main` are historical noise.** The 7 `telemetry: usage snapshot ...` commits that landed on `main` before the AI-20 split (2026-05-20) are not rewritten — they remain in `main`'s history as harmless artifacts. Post-fix the cadence on `main` from telemetry is zero.
 
 ## Operational env vars
 
@@ -79,7 +80,8 @@ curl -H "X-AISS-Stats-Token: $AISS_STATS_TOKEN" https://<deployment>/stats
 |---|---|---|
 | `AISS_STATS_TOKEN` | Bearer token for `GET /stats` | Yes, to enable the endpoint |
 | `AISS_GITHUB_PAT` | Shared with the publish pipeline; used to commit the snapshot | Yes, to enable persistence |
-| `AISS_GITHUB_OWNER`, `AISS_GITHUB_REPO`, `AISS_GITHUB_BRANCH` | Snapshot commit target | Defaults to `Un3x/ai-success-story@main` |
+| `AISS_GITHUB_OWNER`, `AISS_GITHUB_REPO`, `AISS_GITHUB_BRANCH` | Article-publish commit target (approved submissions only) | Defaults to `Un3x/ai-success-story@main` |
+| `AISS_TELEMETRY_BRANCH` | Branch that receives telemetry snapshot commits — kept distinct from `AISS_GITHUB_BRANCH` so telemetry writes don't trip Heroku's single-branch auto-deploy | Default `telemetry-snapshots` |
 | `AISS_TELEMETRY_SNAPSHOT_KEY` | Path of the snapshot file in-repo | Default `telemetry/usage-v0.json` |
 | `TELEMETRY_FLUSH_INTERVAL_MS` | Flush time floor in ms | Default 300000 (5 min) |
 | `TELEMETRY_FLUSH_MUTATION_CEILING` | Flush burst ceiling | Default 50 |

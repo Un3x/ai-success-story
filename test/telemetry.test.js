@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createTelemetry, classifyUa, classifyRoute } = require('../lib/telemetry.js');
+const { createTelemetry, classifyUa, classifyRoute, defaultFetchSnapshot } = require('../lib/telemetry.js');
 
 const silentLogger = { warn: () => {}, error: () => {}, log: () => {} };
 
@@ -230,6 +230,76 @@ test('cold-start fetch resumes counters from the remote snapshot', async () => {
   assert.equal(snap.http.by_route['GET /']['200'], 42);
   assert.equal(snap.mcp.by_tool.search_stories.ok, 7);
   assert.equal(snap.mcp.total_calls, 8);
+});
+
+test('defaultFetchSnapshot builds raw URL containing the configured branch segment', async () => {
+  const seen = [];
+  const fakeFetch = async (url) => {
+    seen.push(url);
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        version: 'v0',
+        snapshot_key: 'telemetry/usage-v0.json',
+        window: { since: '2026-05-20T00:00:00.000Z', now: '2026-05-20T00:00:00.000Z', last_persisted_at: null },
+        http: { by_route: {}, by_ua_bucket: {} },
+        mcp: { by_tool: {}, total_calls: 0 },
+      }),
+    };
+  };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = fakeFetch;
+  try {
+    const fetchSnapshot = defaultFetchSnapshot({
+      owner: 'Un3x',
+      repo: 'ai-success-story',
+      branch: 'telemetry-snapshots',
+      snapshotKey: 'telemetry/usage-v0.json',
+    });
+    await fetchSnapshot();
+    assert.equal(seen.length, 1);
+    assert.match(seen[0], /\/Un3x\/ai-success-story\/telemetry-snapshots\/telemetry\/usage-v0\.json$/);
+    assert.doesNotMatch(seen[0], /\/main\//, 'must not target main branch when branch arg is telemetry-snapshots');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('defaultFetchSnapshot honors custom branch arg end-to-end through createTelemetry resume', async () => {
+  const seen = [];
+  const fakeFetch = async (url) => {
+    seen.push(url);
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({
+        version: 'v0',
+        snapshot_key: 'telemetry/usage-v0.json',
+        window: { since: '2026-05-01T00:00:00.000Z', now: '2026-05-19T00:00:00.000Z', last_persisted_at: '2026-05-19T00:00:00.000Z' },
+        http: { by_route: { 'GET /': { '200': 11 } }, by_ua_bucket: { browser: 11 } },
+        mcp: { by_tool: {}, total_calls: 0 },
+      }),
+    };
+  };
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = fakeFetch;
+  try {
+    const fetchSnapshot = defaultFetchSnapshot({
+      owner: 'Un3x',
+      repo: 'ai-success-story',
+      branch: 'telemetry-snapshots',
+      snapshotKey: 'telemetry/usage-v0.json',
+    });
+    const telemetry = createTelemetry({ fetchSnapshot, logger: silentLogger });
+    await telemetry.ready;
+    assert.equal(seen.length, 1);
+    assert.match(seen[0], /\/telemetry-snapshots\//);
+    const snap = telemetry.snapshot();
+    assert.equal(snap.http.by_route['GET /']['200'], 11, 'resumed counters from the side-branch snapshot');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test('shutdownFlush commits even when not due, when mutations are pending', async () => {

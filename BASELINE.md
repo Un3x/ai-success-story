@@ -29,6 +29,7 @@ Per-route counters are keyed `METHOD ROUTE` (e.g. `GET /post/:slug/`) and bucket
 - `submit_story`, `submission_status` (publish surface)
 - `list_pending`, `approve_pending`, `reject_pending` (admin)
 - Each tool tracked as `{ ok, err }` pair (`err` = handler returned `isError: true` or threw).
+- **MCP protocol/discovery methods (`tools/list`, `resources/list`, `initialize`, etc.) are NOT counted in `mcp.by_tool`.** Only `tools/call` invocations of the registered tools above increment the counters. Discovery hits still register as `POST /mcp` in `http.by_route` (so the route counter is a superset of the tool counter).
 
 ### UA buckets
 
@@ -69,6 +70,7 @@ curl -H "X-AISS-Stats-Token: $AISS_STATS_TOKEN" https://<deployment>/stats
 3. **`/post/:slug` (no trailing slash) counts only the redirect hop**; the destination is a separate inbound to `/post/:slug/`.
 4. **Backfill: forward-only.** No mining of Logplex history (Heroku retains ~1500 lines / 1 week — too lossy to baseline against).
 5. **A failed GitHub commit drops that flush window's mutations from the persistent snapshot** but the in-memory counters keep growing; the next successful flush captures everything since the last successful one. A long network outage paired with a dyno restart loses the unsaved window — accepted at prototype scale.
+6. **Flush failures reset the cadence trigger** (`mutationsSinceFlush` and `lastFlushAt`) so a sustained failure does not produce one PUT attempt per request. Worst case the snapshot stops landing for `flushIntervalMs` × N cycles. Single `warn` log per failure makes this externally visible.
 
 ## Operational env vars
 

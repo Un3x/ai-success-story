@@ -130,6 +130,77 @@ test('flush failure resets in-flight flag so next attempt is allowed', async () 
   assert.equal(attempts, 2);
 });
 
+test('flush failure does NOT cause retry storm: cadence trigger resets', async () => {
+  let attempts = 0;
+  const githubCommit = async () => {
+    attempts += 1;
+    throw new Error('GitHub PUT telemetry/usage-v0.json → 422 (sha-absent): sha missing');
+  };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 60_000,
+    flushMutationCeiling: 50,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  // Pump 100 mutations past the ceiling — should fire ONCE, fail, then back off.
+  for (let i = 0; i < 100; i++) {
+    telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  }
+  // First flush call: ceiling tripped, attempts the commit, fails.
+  const r1 = await telemetry.flushIfDue();
+  assert.equal(r1.ok, false);
+  assert.equal(attempts, 1, 'one commit attempt fired');
+
+  // Simulate ~30 subsequent requests in the same window — each calls flushIfDue.
+  // After the failure, mutationsSinceFlush is reset to 0 and lastFlushAt is now,
+  // so isDue() must return false — NO further commit attempts should fire.
+  for (let i = 0; i < 30; i++) {
+    const r = await telemetry.flushIfDue();
+    assert.equal(r.skipped, true, `request ${i}: must skip, not re-attempt`);
+  }
+  assert.equal(attempts, 1, 'no retry storm: still only one commit attempt');
+
+  // Continued mutations re-arm the ceiling trigger; the next ceiling hit fires
+  // exactly one more attempt (the back-off is mutation-count based, not exponential).
+  for (let i = 0; i < 60; i++) {
+    telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  }
+  const r2 = await telemetry.flushIfDue();
+  assert.equal(r2.ok, false);
+  assert.equal(attempts, 2, 'second ceiling hit fires exactly one more attempt');
+});
+
+test('flush failure preserves in-memory counters so next success captures full window', async () => {
+  let attempts = 0;
+  const captured = [];
+  const githubCommit = async ({ content }) => {
+    attempts += 1;
+    if (attempts === 1) throw new Error('transient 422');
+    captured.push(JSON.parse(content));
+    return { sha: 'eeee' };
+  };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 0,
+    flushMutationCeiling: 1,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r1 = await telemetry.flushIfDue();
+  assert.equal(r1.ok, false);
+  // Even though the flush failed, in-memory counters survive.
+  assert.equal(telemetry.snapshot().http.by_route['GET /']['200'], 2);
+
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r2 = await telemetry.flushIfDue();
+  assert.equal(r2.ok, true);
+  // The successful commit captures everything since the last success (all 3).
+  assert.equal(captured[0].http.by_route['GET /']['200'], 3);
+});
+
 test('cold-start fetch failure falls back to zero counters without throwing', async () => {
   const fetchSnapshot = async () => { throw new Error('404 from raw.githubusercontent'); };
   const telemetry = createTelemetry({

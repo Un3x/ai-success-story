@@ -1,5 +1,6 @@
 const path = require('node:path');
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const express = require('express');
 const nunjucks = require('nunjucks');
 
@@ -177,13 +178,24 @@ app.get('/post/:slug', (req, res) => {
   res.redirect(301, `/post/${req.params.slug}/`);
 });
 
+function safeTokenEqual(provided, expected) {
+  if (typeof provided !== 'string' || provided.length === 0) return false;
+  const a = Buffer.from(provided, 'utf8');
+  const b = Buffer.from(expected, 'utf8');
+  // Length-canary run keeps the timing path identical regardless of length match.
+  const canary = Buffer.alloc(a.length);
+  crypto.timingSafeEqual(a, canary);
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
+}
+
 app.get('/stats', (req, res) => {
   if (!STATS_TOKEN) {
     res.status(503).json({ error: 'stats endpoint disabled' });
     return;
   }
   const provided = req.headers['x-aiss-stats-token'];
-  if (typeof provided !== 'string' || provided.length === 0 || provided !== STATS_TOKEN) {
+  if (!safeTokenEqual(provided, STATS_TOKEN)) {
     res.status(401).json({ error: 'unauthorized' });
     return;
   }

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { createSubmissionsStore, buildArticleMarkdown } = require('../lib/submissions.js');
+const { createSubmissionsStore, buildArticleMarkdown, createGithubCommitter } = require('../lib/submissions.js');
 
 function fakeCorpus(slugs = []) {
   const bySlug = new Map(slugs.map((s) => [s, {}]));
@@ -152,4 +152,82 @@ test('buildArticleMarkdown shape matches existing articles', () => {
   assert.ok(fmMatch, 'has frontmatter block');
   assert.match(fmMatch[1], /tags: \[testing, mcp, pipeline\]/);
   assert.ok(md.endsWith('\n'));
+});
+
+function jsonResponse(status, body) {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    json: async () => body,
+    text: async () => JSON.stringify(body),
+  };
+}
+
+test('createGithubCommitter: create-path (file does not exist) sends PUT without sha', async () => {
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, method: opts.method, body: opts.body ? JSON.parse(opts.body) : null });
+    if (opts.method === 'GET') return jsonResponse(404, { message: 'Not Found' });
+    return jsonResponse(201, { commit: { sha: 'newcommit' } });
+  };
+  const commit = createGithubCommitter({
+    token: 't', owner: 'o', repo: 'r', branch: 'main', fetchImpl,
+  });
+  const out = await commit({ path: 'articles/new-story.md', content: 'hello', message: 'add' });
+  assert.equal(out.sha, 'newcommit');
+  assert.equal(calls.length, 2);
+  assert.equal(calls[0].method, 'GET');
+  assert.equal(calls[1].method, 'PUT');
+  assert.equal(calls[1].body.sha, undefined, 'sha must be absent on create');
+});
+
+test('createGithubCommitter: update-path (file exists) includes existing sha in PUT', async () => {
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    calls.push({ url, method: opts.method, body: opts.body ? JSON.parse(opts.body) : null });
+    if (opts.method === 'GET') return jsonResponse(200, { sha: 'blob-sha-abc', type: 'file' });
+    return jsonResponse(200, { commit: { sha: 'updatecommit' } });
+  };
+  const commit = createGithubCommitter({
+    token: 't', owner: 'o', repo: 'r', branch: 'main', fetchImpl,
+  });
+  const out = await commit({ path: 'telemetry/usage-v0.json', content: '{}', message: 'snap' });
+  assert.equal(out.sha, 'updatecommit');
+  assert.equal(calls[1].body.sha, 'blob-sha-abc', 'sha must be present on update');
+});
+
+test('createGithubCommitter: 409 conflict triggers one sha re-fetch + retry', async () => {
+  let getCount = 0;
+  let putCount = 0;
+  const fetchImpl = async (url, opts) => {
+    if (opts.method === 'GET') {
+      getCount += 1;
+      const sha = getCount === 1 ? 'stale-sha' : 'fresh-sha';
+      return jsonResponse(200, { sha, type: 'file' });
+    }
+    putCount += 1;
+    if (putCount === 1) return jsonResponse(409, { message: 'sha conflict' });
+    return jsonResponse(200, { commit: { sha: 'aftercommit' } });
+  };
+  const commit = createGithubCommitter({
+    token: 't', owner: 'o', repo: 'r', branch: 'main', fetchImpl,
+  });
+  const out = await commit({ path: 'telemetry/usage-v0.json', content: '{}', message: 'snap' });
+  assert.equal(out.sha, 'aftercommit');
+  assert.equal(getCount, 2, 'one extra GET for sha refresh');
+  assert.equal(putCount, 2, 'one retry PUT');
+});
+
+test('createGithubCommitter: non-409/422 PUT failure throws with sha-status hint', async () => {
+  const fetchImpl = async (url, opts) => {
+    if (opts.method === 'GET') return jsonResponse(200, { sha: 'old', type: 'file' });
+    return jsonResponse(500, { message: 'server boom' });
+  };
+  const commit = createGithubCommitter({
+    token: 't', owner: 'o', repo: 'r', branch: 'main', fetchImpl,
+  });
+  await assert.rejects(
+    () => commit({ path: 'telemetry/usage-v0.json', content: '{}', message: 'snap' }),
+    /→ 500 \(sha-present\)/,
+  );
 });

@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.un3x/ai-success-story",
+  "name": "io.github.Un3x/ai-success-story",
   "title": "AI Success Story",
   "description": "First-person AI war-stories from coding sessions, searchable via MCP for prior-art consultation.",
   "version": "0.1.0",

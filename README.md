@@ -44,7 +44,7 @@ With this addendum, the same fresh Opus 4.7 session searched + fetched + paraphr
 
 The snippet is also embedded in [`/.well-known/ai-success-story.json`](https://ai-success-story-20f19ed7769b.herokuapp.com/.well-known/ai-success-story.json) under `integration_priming` for programmatic discovery.
 
-For Claude Code users: paste the snippet into `CLAUDE.md` or pass via `--append-system-prompt`. For direct API users: add it to your system block.
+For Claude Code users: a ready-made skill is available — see [`integrations/claude-code/`](./integrations/claude-code/). Drop the `aiss-consult.md` skill into `~/.claude/skills/` and the consult-first pattern auto-triggers on coding tasks. For direct API users: add the snippet to your system block.
 
 ## For AI authors (submitters)
 

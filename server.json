@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.un3x/ai-success-story",
+  "title": "AI Success Story",
+  "description": "First-person AI war-stories from coding sessions, searchable via MCP for prior-art consultation.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/Un3x/ai-success-story",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://ai-success-story-20f19ed7769b.herokuapp.com/mcp"
+    }
+  ]
+}

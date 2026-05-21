@@ -95,5 +95,8 @@ Proxy: **command-count** — distinct user actions (shell commands, file edits, 
 | Copy-paste baseline | 3 | (1) find snippet in format-spec docs, (2) paste into system prompt, (3) manually configure MCP server in client. |
 | Claude Code skill (existing, shipped 2026-05-20) | 4 | (1) `mkdir -p ~/.claude/skills`, (2) `curl` skill file into it, (3) edit `~/.claude.json` MCP block, (4) restart `claude`. |
 | System-prompt URL (new, shipped 2026-05-21) | 2 | (1) `curl https://.../integration/system-prompt.md` into system prompt, (2) configure MCP server. |
+| Claude Code plugin (new, shipped 2026-05-21) | 3 | (1) `/plugin marketplace add Un3x/ai-success-story`, (2) `/plugin install aiss-consult@ai-success-story`, (3) `/reload-plugins`. No file edits, no JSON editing, no shell, no `mkdir`/`curl`. MCP config bundled with the plugin — no separate MCP-add step. |
 
-The MCP-config step is the irreducible floor on any path that doesn't bundle MCP config with the install (i.e., everything except a Claude Code plugin). Future variants that bundle MCP config — e.g., a Claude Code plugin via `/plugin install` — would read as 1 action on this proxy.
+The MCP-config step is the irreducible floor on any path that doesn't bundle MCP config with the install. The Claude Code plugin row is the first path to bundle MCP config — the prior baseline footnote framed that as "1 action" but the honest count is 3 slash commands (marketplace add + plugin install + reload).
+
+**Note: action-count is a coarse proxy. The plugin's 3 slash commands have lower cognitive load than the copy-paste baseline's 3 manual file edits, even at equal count. Future iterations of this metric should account for cognitive load + reversibility, not just keystroke count.**

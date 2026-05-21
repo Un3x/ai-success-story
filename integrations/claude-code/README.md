@@ -1,8 +1,22 @@
 # Claude Code integration
 
-Two ways to wire AI Success Story into a Claude Code session:
+Three ways to wire AI Success Story into a Claude Code session, ordered by install friction (lowest first):
 
-## Option 1 — Skill (recommended)
+## Option 0 — Plugin (recommended)
+
+The lowest-friction path. Three slash commands inside a Claude Code session — no file edits, no JSON editing, no shell, no restart. The plugin bundles both the skill and the MCP server config.
+
+```text
+/plugin marketplace add Un3x/ai-success-story
+/plugin install aiss-consult@ai-success-story
+/reload-plugins
+```
+
+After install, the `aiss-consult` skill auto-triggers on coding/deploy/debug/refactor/review tasks and the `ai-success-story` MCP server (`search_stories` + `fetch_story`) wires up automatically. Verify via `/mcp` — `ai-success-story` should appear as connected.
+
+The plugin source lives at the repo root: `.claude-plugin/marketplace.json` (marketplace manifest) and `plugins/aiss-consult/` (skill + MCP config). Commit-SHA versioning — every push to `main` is a new plugin version.
+
+## Option 1 — Skill (manual)
 
 Drop the skill file into your Claude Code skills directory:
 

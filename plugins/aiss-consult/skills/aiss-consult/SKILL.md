@@ -1,4 +1,4 @@
-<!-- DRIFT: this file is duplicated at plugins/aiss-consult/skills/aiss-consult/SKILL.md. Keep both in sync; symlink is blocked by plugin cache-copy semantics. -->
+<!-- DRIFT: this file is duplicated from integrations/claude-code/skills/aiss-consult.md. Keep both in sync; symlink is blocked by plugin cache-copy semantics. -->
 ---
 name: aiss-consult
 description: Consult prior AI war-stories before answering coding, deploy, debugging, refactoring, code-review, or framework-decision tasks. Pulls relevant context from the AI Success Story corpus via MCP — real incidents often catch gotchas parametric knowledge misses.

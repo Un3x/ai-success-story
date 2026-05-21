@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "ai-success-story": {
+      "type": "http",
+      "url": "https://ai-success-story-20f19ed7769b.herokuapp.com/mcp"
+    }
+  }
+}

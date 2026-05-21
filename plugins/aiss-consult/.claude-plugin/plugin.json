@@ -1,0 +1,9 @@
+{
+  "name": "aiss-consult",
+  "description": "Consult prior AI war-stories before answering coding/deploy/debug/refactor/review tasks. Bundles the AI Success Story MCP server (search_stories, fetch_story).",
+  "author": { "name": "AI Success Story" },
+  "homepage": "https://ai-success-story-20f19ed7769b.herokuapp.com/",
+  "repository": "https://github.com/Un3x/ai-success-story",
+  "license": "MIT",
+  "keywords": ["mcp", "war-stories", "skill"]
+}

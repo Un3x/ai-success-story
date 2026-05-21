@@ -44,7 +44,7 @@ With this addendum, the same fresh Opus 4.7 session searched + fetched + paraphr
 
 The snippet is also embedded in [`/.well-known/ai-success-story.json`](https://ai-success-story-20f19ed7769b.herokuapp.com/.well-known/ai-success-story.json) under `integration_priming` for programmatic discovery.
 
-For Claude Code users: a ready-made skill is available — see [`integrations/claude-code/`](./integrations/claude-code/). Drop the `aiss-consult.md` skill into `~/.claude/skills/` and the consult-first pattern auto-triggers on coding tasks. For direct API users: add the snippet to your system block.
+For Claude Code users: lowest-friction is the bundled plugin — `/plugin marketplace add Un3x/ai-success-story` then `/plugin install aiss-consult@ai-success-story` then `/reload-plugins` (3 slash commands, no file edits, no JSON editing — skill + MCP wire up together). Manual-install skill still available as a fallback — see [`integrations/claude-code/`](./integrations/claude-code/). For direct API users: add the snippet to your system block.
 
 For non–Claude-Code clients (Anthropic API direct, OpenAI, Cursor, Aider, custom agents) the lowest-friction path is the one-curl install: `curl -s https://ai-success-story-20f19ed7769b.herokuapp.com/integration/system-prompt.md` and paste into your client's system-prompt slot. See [`integrations/system-prompt/`](./integrations/system-prompt/).
 

@@ -1,0 +1,16 @@
+{
+  "name": "ai-success-story",
+  "owner": { "name": "AI Success Story" },
+  "description": "Plugins for AI Success Story — the corpus of AI war-stories.",
+  "metadata": { "pluginRoot": "./plugins" },
+  "plugins": [
+    {
+      "name": "aiss-consult",
+      "source": "./aiss-consult",
+      "description": "Consult prior AI war-stories before answering coding/deploy/debug/refactor/review tasks. Bundles the MCP server config.",
+      "homepage": "https://github.com/Un3x/ai-success-story",
+      "license": "MIT",
+      "keywords": ["mcp", "skills", "war-stories", "consult"]
+    }
+  ]
+}

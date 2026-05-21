@@ -201,6 +201,70 @@ test('flush failure preserves in-memory counters so next success captures full w
   assert.equal(captured[0].http.by_route['GET /']['200'], 3);
 });
 
+test('last_persist_failed_at is set on flush failure and cleared on next success', async () => {
+  let attempts = 0;
+  const githubCommit = async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error('transient 422');
+    return { sha: 'ffff' };
+  };
+  const telemetry = createTelemetry({
+    githubCommit,
+    flushIntervalMs: 0,
+    flushMutationCeiling: 1,
+    logger: silentLogger,
+  });
+  await telemetry.ready;
+  assert.equal(telemetry.snapshot().window.last_persist_failed_at, null, 'starts null');
+
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r1 = await telemetry.flushIfDue();
+  assert.equal(r1.ok, false);
+  const afterFail = telemetry.snapshot().window.last_persist_failed_at;
+  assert.equal(typeof afterFail, 'string', 'set to ISO timestamp after failure');
+  assert.match(afterFail, /^\d{4}-\d{2}-\d{2}T/);
+
+  telemetry.recordHttp({ route: '/', method: 'GET', status: 200, uaBucket: 'browser' });
+  const r2 = await telemetry.flushIfDue();
+  assert.equal(r2.ok, true);
+  assert.equal(telemetry.snapshot().window.last_persist_failed_at, null, 'cleared after next success');
+});
+
+test('last_persist_failed_at survives cold-start resume round-trip', async () => {
+  const remote = {
+    version: 'v0',
+    snapshot_key: 'telemetry/usage-v0.json',
+    window: {
+      since: '2026-05-01T00:00:00.000Z',
+      now: '2026-05-19T00:00:00.000Z',
+      last_persisted_at: '2026-05-19T00:00:00.000Z',
+      last_persist_failed_at: '2026-05-20T12:00:00.000Z',
+    },
+    http: { by_route: {}, by_ua_bucket: {} },
+    mcp: { by_tool: {}, total_calls: 0 },
+  };
+  const fetchSnapshot = async () => remote;
+  const telemetry = createTelemetry({ fetchSnapshot, logger: silentLogger });
+  await telemetry.ready;
+  assert.equal(telemetry.snapshot().window.last_persist_failed_at, '2026-05-20T12:00:00.000Z');
+});
+
+test('cold-start resume from legacy snapshot (no last_persist_failed_at) yields null, not undefined', async () => {
+  const legacyRemote = {
+    version: 'v0',
+    snapshot_key: 'telemetry/usage-v0.json',
+    window: { since: '2026-05-01T00:00:00.000Z', now: '2026-05-19T00:00:00.000Z', last_persisted_at: '2026-05-19T00:00:00.000Z' },
+    http: { by_route: {}, by_ua_bucket: {} },
+    mcp: { by_tool: {}, total_calls: 0 },
+  };
+  const fetchSnapshot = async () => legacyRemote;
+  const telemetry = createTelemetry({ fetchSnapshot, logger: silentLogger });
+  await telemetry.ready;
+  const snap = telemetry.snapshot();
+  assert.equal(snap.window.last_persist_failed_at, null);
+  assert.ok('last_persist_failed_at' in snap.window, 'key is present on resumed snapshot');
+});
+
 test('cold-start fetch failure falls back to zero counters without throwing', async () => {
   const fetchSnapshot = async () => { throw new Error('404 from raw.githubusercontent'); };
   const telemetry = createTelemetry({

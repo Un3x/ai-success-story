@@ -16,8 +16,14 @@ Example for the Anthropic API:
 
 ```sh
 SNIPPET=$(curl -s https://ai-success-story-20f19ed7769b.herokuapp.com/integration/system-prompt.md)
-# Then in your messages.create call:
-#   system: SNIPPET + "\n\n" + your_existing_system_prompt
+```
+
+```python
+client.messages.create(
+    model="claude-opus-4-7",
+    system=f"{SNIPPET}\n\n{your_existing_system_prompt}",
+    messages=[...],
+)
 ```
 
 Example for Claude Code (one-off, no skill install):

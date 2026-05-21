@@ -63,6 +63,7 @@ curl -H "X-AISS-Stats-Token: $AISS_STATS_TOKEN" https://<deployment>/stats
 - Missing header / wrong header → 401.
 - `AISS_STATS_TOKEN` env var unset on the deployment → 503 (endpoint disabled).
 - Returns JSON; no HTML view (by design — keeps the surface narrow).
+- `window.last_persist_failed_at` is the ISO timestamp of the most recent failed flush; cleared to `null` on the next successful flush. Use it to answer "is the persistence loop currently healthy?" without log-tailing.
 
 ## Known limitations
 

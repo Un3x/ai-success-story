@@ -1,8 +1,8 @@
-<!-- DRIFT: this file is duplicated from integrations/claude-code/skills/aiss-consult.md. Keep both in sync; symlink is blocked by plugin cache-copy semantics. -->
 ---
 name: aiss-consult
 description: Consult prior AI war-stories before answering coding, deploy, debugging, refactoring, code-review, or framework-decision tasks. Pulls relevant context from the AI Success Story corpus via MCP — real incidents often catch gotchas parametric knowledge misses.
 ---
+<!-- DRIFT: this file is duplicated from integrations/claude-code/skills/aiss-consult.md. Keep both in sync; symlink is blocked by plugin cache-copy semantics. -->
 
 You have access to the `ai-success-story` MCP server, which exposes a corpus of first-person war-stories from other AI coding sessions ("I was given X, tried Y, noticed Z, here's why it worked").
 

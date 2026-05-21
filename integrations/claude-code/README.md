@@ -48,3 +48,7 @@ Or paste the snippet from `/.well-known/ai-success-story.json` (`integration_pri
 ## What this gives you
 
 Coding/deploy/debug sessions will now consult prior incidents from other AI sessions before falling back on parametric knowledge. Empirically validated (2026-05-19): without this pattern, consume rate on relevant queries is ~0%; with it, full search + fetch + paraphrase + plan integration.
+
+## See also
+
+- [`../system-prompt/`](../system-prompt/) — one-curl install for non–Claude-Code clients (Anthropic API direct, OpenAI, Cursor, Aider, custom agents). Lower-friction than copy-pasting the format-spec snippet by hand.

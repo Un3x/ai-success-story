@@ -16,6 +16,7 @@ const ROOT = __dirname;
 const ARTICLES_DIR = path.join(ROOT, 'articles');
 const VIEWS_DIR = path.join(ROOT, 'views');
 const FORMAT_SPEC_PATH = path.join(ROOT, 'format-spec.md');
+const SYSTEM_PROMPT_PATH = path.join(ROOT, 'integrations/system-prompt/snippet.md');
 
 const SUBMIT_TOKEN = process.env.AISS_SUBMIT_TOKEN || '';
 const ADMIN_TOKEN = process.env.AISS_ADMIN_TOKEN || '';
@@ -129,6 +130,9 @@ app.get('/.well-known/ai-success-story.json', (req, res) => {
       empirically_validated: '2026-05-19',
       note: 'Without this addendum, consumer pick rate is ~0% on relevant queries. With it, full search+fetch+paraphrase+integration. See format-spec.md "For AI integrators" section.',
     },
+    integration: {
+      system_prompt_url: `${baseUrl}/integration/system-prompt.md`,
+    },
     surfaces: {
       html_index: `${baseUrl}/`,
       raw_markdown_pattern: `${baseUrl}/post/{slug}.md`,
@@ -156,6 +160,8 @@ app.get('/docs/format-spec', serveMarkdownDoc(FORMAT_SPEC_PATH));
 app.get('/docs/format-spec.md', serveMarkdownDoc(FORMAT_SPEC_PATH));
 app.get('/docs/consumer-api-spec', serveMarkdownDoc(path.join(ROOT, 'consumer-api-spec.md')));
 app.get('/docs/consumer-api-spec.md', serveMarkdownDoc(path.join(ROOT, 'consumer-api-spec.md')));
+app.get('/integration/system-prompt.md', serveMarkdownDoc(SYSTEM_PROMPT_PATH));
+app.get('/integration/system-prompt', serveMarkdownDoc(SYSTEM_PROMPT_PATH));
 
 app.get('/post/:slug.md', (req, res) => {
   const { bySlug } = corpus.snapshot();

@@ -85,3 +85,15 @@ curl -H "X-AISS-Stats-Token: $AISS_STATS_TOKEN" https://<deployment>/stats
 | `AISS_TELEMETRY_SNAPSHOT_KEY` | Path of the snapshot file in-repo | Default `telemetry/usage-v0.json` |
 | `TELEMETRY_FLUSH_INTERVAL_MS` | Flush time floor in ms | Default 300000 (5 min) |
 | `TELEMETRY_FLUSH_MUTATION_CEILING` | Flush burst ceiling | Default 50 |
+
+## Integration friction baseline
+
+Proxy: **command-count** — distinct user actions (shell commands, file edits, manual paste-into-config operations) to go from "I want to consult AISS" to "first `search_stories` call answers in a session." Lower is better. Each row names the path and its irreducible floor.
+
+| Path | Actions | Steps |
+|---|---|---|
+| Copy-paste baseline | 3 | (1) find snippet in format-spec docs, (2) paste into system prompt, (3) manually configure MCP server in client. |
+| Claude Code skill (existing, shipped 2026-05-20) | 4 | (1) `mkdir -p ~/.claude/skills`, (2) `curl` skill file into it, (3) edit `~/.claude.json` MCP block, (4) restart `claude`. |
+| System-prompt URL (new, shipped 2026-05-21) | 2 | (1) `curl https://.../integration/system-prompt.md` into system prompt, (2) configure MCP server. |
+
+The MCP-config step is the irreducible floor on any path that doesn't bundle MCP config with the install (i.e., everything except a Claude Code plugin). Future variants that bundle MCP config — e.g., a Claude Code plugin via `/plugin install` — would read as 1 action on this proxy.

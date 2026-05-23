@@ -3,8 +3,8 @@
   "snapshot_key": "telemetry/usage-v0.json",
   "window": {
     "since": "2026-05-20T00:00:00.000Z",
-    "now": "2026-05-23T12:53:06.532Z",
-    "last_persisted_at": "2026-05-23T12:53:06.532Z",
+    "now": "2026-05-23T12:56:51.354Z",
+    "last_persisted_at": "2026-05-23T12:56:51.354Z",
     "last_persist_failed_at": null
   },
   "http": {
@@ -25,7 +25,7 @@
         "404": 706
       },
       "POST /mcp": {
-        "200": 627,
+        "200": 632,
         "202": 205,
         "400": 2,
         "406": 5
@@ -35,7 +35,7 @@
         "404": 384
       },
       "GET /docs/format-spec": {
-        "200": 8
+        "200": 9
       },
       "GET /.well-known/ai-success-story.json": {
         "200": 14
@@ -57,7 +57,7 @@
       }
     },
     "by_ua_bucket": {
-      "mcp-client": 885,
+      "mcp-client": 891,
       "bot": 1876,
       "other": 40,
       "browser": 69
@@ -70,11 +70,11 @@
         "err": 0
       },
       "submit_story": {
-        "ok": 7,
+        "ok": 8,
         "err": 0
       },
       "submission_status": {
-        "ok": 3,
+        "ok": 5,
         "err": 0
       },
       "list_pending": {
@@ -86,10 +86,10 @@
         "err": 0
       },
       "approve_pending": {
-        "ok": 1,
+        "ok": 2,
         "err": 0
       }
     },
-    "total_calls": 25
+    "total_calls": 29
   }
 }

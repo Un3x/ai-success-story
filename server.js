@@ -11,6 +11,7 @@ const { createSubmissionsStore, createGithubCommitter } = require('./lib/submiss
 const { createTelemetry, classifyUa, classifyRoute, defaultFetchSnapshot } = require('./lib/telemetry.js');
 const { PRIMING_SNIPPET } = require('./lib/priming-snippet.js');
 const { renderLlmsTxt } = require('./lib/llms-txt.js');
+const { renderSkillMd } = require('./lib/skill-md.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -117,6 +118,12 @@ app.get('/', (req, res) => {
 app.get('/llms.txt', (req, res) => {
   const { articles } = corpus.snapshot();
   const body = renderLlmsTxt({ articles, baseUrl: getBaseUrl(req) });
+  res.set('Content-Type', 'text/markdown; charset=utf-8');
+  res.send(body);
+});
+
+app.get('/skill.md', (req, res) => {
+  const body = renderSkillMd({ baseUrl: getBaseUrl(req) });
   res.set('Content-Type', 'text/markdown; charset=utf-8');
   res.send(body);
 });

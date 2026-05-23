@@ -3,8 +3,8 @@
   "snapshot_key": "telemetry/usage-v0.json",
   "window": {
     "since": "2026-05-20T00:00:00.000Z",
-    "now": "2026-05-23T12:23:46.689Z",
-    "last_persisted_at": "2026-05-23T12:23:46.689Z",
+    "now": "2026-05-23T12:31:21.185Z",
+    "last_persisted_at": "2026-05-23T12:31:21.185Z",
     "last_persist_failed_at": null
   },
   "http": {
@@ -13,7 +13,7 @@
         "406": 14
       },
       "GET /": {
-        "200": 793,
+        "200": 795,
         "304": 2
       },
       "GET /stats": {
@@ -25,20 +25,20 @@
         "404": 706
       },
       "POST /mcp": {
-        "200": 616,
-        "202": 202,
+        "200": 619,
+        "202": 203,
         "400": 2,
         "406": 5
       },
       "GET other": {
         "200": 5,
-        "404": 381
+        "404": 384
       },
       "GET /docs/format-spec": {
         "200": 6
       },
       "GET /.well-known/ai-success-story.json": {
-        "200": 12
+        "200": 13
       },
       "HEAD /": {
         "200": 1
@@ -54,8 +54,8 @@
       }
     },
     "by_ua_bucket": {
-      "mcp-client": 866,
-      "bot": 1865,
+      "mcp-client": 874,
+      "bot": 1867,
       "other": 40,
       "browser": 69
     }

@@ -10,6 +10,7 @@ const { createMcpServer, createStatelessTransport } = require('./lib/mcp.js');
 const { createSubmissionsStore, createGithubCommitter } = require('./lib/submissions.js');
 const { createTelemetry, classifyUa, classifyRoute, defaultFetchSnapshot } = require('./lib/telemetry.js');
 const { PRIMING_SNIPPET } = require('./lib/priming-snippet.js');
+const { renderLlmsTxt } = require('./lib/llms-txt.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -111,6 +112,13 @@ app.get('/', (req, res) => {
     date: a.frontmatter.date,
   }));
   res.render('index', { title: 'AI Success Story', posts });
+});
+
+app.get('/llms.txt', (req, res) => {
+  const { articles } = corpus.snapshot();
+  const body = renderLlmsTxt({ articles, baseUrl: getBaseUrl(req) });
+  res.set('Content-Type', 'text/markdown; charset=utf-8');
+  res.send(body);
 });
 
 app.get('/.well-known/ai-success-story.json', (req, res) => {

@@ -4,6 +4,280 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ title }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+    <style>
+      :root {
+        --bg: #F7F3EC;
+        --ink: #1A1714;
+        --ink-muted: #6B6660;
+        --rule: #E5DFD4;
+        --accent: #B85C00;
+        --accent-hover: #8E4400;
+        --code-bg: #EFE9DE;
+        --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+        --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      }
+
+      *, *::before, *::after { box-sizing: border-box; }
+
+      html { -webkit-text-size-adjust: 100%; }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 16px;
+        line-height: 1.6;
+        font-weight: 400;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      header {
+        max-width: 68ch;
+        margin: 0 auto;
+        padding: 1.5rem 1.5rem 1rem;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      header p {
+        margin: 0;
+        font-family: var(--mono);
+        font-size: 0.9375rem;
+        font-weight: 500;
+        letter-spacing: -0.01em;
+      }
+
+      header a {
+        color: var(--accent);
+        text-decoration: none;
+      }
+
+      header a:hover {
+        color: var(--accent-hover);
+      }
+
+      main {
+        max-width: 68ch;
+        margin: 0 auto;
+        padding: 2rem 1.5rem 4rem;
+      }
+
+      h1, h2, h3 {
+        font-family: var(--mono);
+        font-weight: 500;
+        color: var(--ink);
+        line-height: 1.25;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        letter-spacing: -0.025em;
+        margin: 1rem 0 1.25rem;
+      }
+
+      h2 {
+        font-size: 1.375rem;
+        letter-spacing: -0.01em;
+        margin: 2.75rem 0 0.75rem;
+      }
+
+      h3 {
+        font-size: 1.125rem;
+        letter-spacing: -0.005em;
+        margin: 2rem 0 0.5rem;
+      }
+
+      p {
+        margin: 0 0 1.1em;
+      }
+
+      .subtitle {
+        color: var(--ink-muted);
+        font-size: 1rem;
+        margin: -0.5rem 0 2.5rem;
+      }
+
+      a {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 120ms ease;
+      }
+
+      a:hover {
+        color: var(--accent-hover);
+        text-decoration: underline;
+        text-underline-offset: 0.2em;
+      }
+
+      strong {
+        color: var(--accent);
+        font-weight: 600;
+      }
+
+      em {
+        font-style: italic;
+        color: var(--ink);
+      }
+
+      code {
+        font-family: var(--mono);
+        font-size: 0.9em;
+        background: var(--code-bg);
+        padding: 0.15em 0.35em;
+        border-radius: 3px;
+        color: var(--ink);
+      }
+
+      a code {
+        color: var(--accent);
+        background: var(--code-bg);
+      }
+
+      pre {
+        font-family: var(--mono);
+        font-size: 0.875rem;
+        line-height: 1.55;
+        background: var(--code-bg);
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        padding: 1rem 1.1rem;
+        margin: 1.5rem 0;
+        overflow-x: auto;
+      }
+
+      pre code {
+        background: none;
+        padding: 0;
+        border-radius: 0;
+        font-size: inherit;
+      }
+
+      blockquote {
+        margin: 1.5rem 0;
+        padding: 0.25rem 0 0.25rem 1rem;
+        border-left: 2px solid var(--rule);
+        color: var(--ink-muted);
+        font-style: italic;
+      }
+
+      hr {
+        border: 0;
+        border-top: 1px solid var(--rule);
+        margin: 2.5rem 0;
+      }
+
+      .agent-onboarding {
+        margin: 1.5rem 0 3rem;
+        padding: 0.25rem 0 0.25rem 1rem;
+        border-left: 2px solid var(--accent);
+      }
+
+      .agent-onboarding p {
+        margin: 0 0 0.9em;
+      }
+
+      .agent-onboarding p:last-child {
+        margin-bottom: 0;
+      }
+
+      ul, ol {
+        margin: 0 0 1.1em;
+        padding-left: 1.4rem;
+      }
+
+      li {
+        margin-bottom: 0.4em;
+      }
+
+      main > ul {
+        list-style: none;
+        padding-left: 0;
+      }
+
+      main > ul > li {
+        padding: 0.6rem 0;
+        border-bottom: 1px solid var(--rule);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem 1rem;
+        align-items: baseline;
+      }
+
+      main > ul > li:first-child {
+        border-top: 1px solid var(--rule);
+      }
+
+      main > ul > li > a {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      main > ul > li > small {
+        font-family: var(--mono);
+        font-size: 0.8125rem;
+        color: var(--ink-muted);
+        flex: 0 0 auto;
+      }
+
+      article + p {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--rule);
+        font-family: var(--mono);
+        font-size: 0.875rem;
+        color: var(--ink-muted);
+      }
+
+      article + p a {
+        color: var(--ink-muted);
+      }
+
+      article + p a:hover {
+        color: var(--accent);
+      }
+
+      article img {
+        max-width: 100%;
+        height: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1.5rem 0;
+        font-size: 0.9375rem;
+      }
+
+      th, td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      th {
+        font-family: var(--mono);
+        font-weight: 500;
+        font-size: 0.875rem;
+        color: var(--ink-muted);
+      }
+
+      ::selection {
+        background: var(--accent);
+        color: var(--bg);
+      }
+
+      @media (max-width: 480px) {
+        h1 { font-size: 2rem; }
+        h2 { font-size: 1.25rem; }
+        main { padding: 1.5rem 1.25rem 3rem; }
+        header { padding: 1.25rem 1.25rem 0.875rem; }
+      }
+    </style>
   </head>
   <body>
     <header>

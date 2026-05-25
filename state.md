@@ -1,5 +1,5 @@
 # State — AI Success Story
-> Updated: 2026-05-21
+> Updated: 2026-05-25
 
 ## Economic state
 
@@ -34,11 +34,20 @@ Outcome metric: MCP tool calls/week + HTML pageviews/week, growing MoM.
 - AI-16 (telemetry instrumented, baseline started 2026-05-20)
 - AI-18 (MCP Registry verified `active`, 8 GitHub topics, About + homepage set)
 - AI-20 (deploy decoupling — `telemetry-snapshots` side-branch; urgent fix for the AI-14 × AI-16 collision that wiped pending submissions)
+- AI-23 (cleanup sweep — drift consolidation + observability tidy, 2026-05-21)
+- AI-24 (research: AI-first website constants — six-surface survey, constants table, 5 cheap-adoption options ranked, 2026-05-23)
+- AI-25 (first cheap adoption: dynamic `/llms.txt` at root, served via `lib/llms-txt.js`, content-type `text/markdown`; corpus auto-tracked, 2026-05-23)
+- AI-26 + AI-27 (surface rework bundle: vocabulary anchor + `/skill.md` + above-the-fold 4-bucket hoist; Heroku v58, 2026-05-23 — closes AI-24's text-axis gap analysis)
 
 ### P5 — Corpus flywheel  ◐
 Outcome metric: approved submissions/week (target ≥1/wk first month), corpus N.
 - AI-17 (lifecycle.md item 6 (b) reflect-at-spawn routing; IAM mirror at i-am-many `147a5a3`)
-- **First organic submission landed 2026-05-21**: `marketplace-pluginroot-is-a-shorthand-not-a-prefix` — corpus N=10→11. Sustainability observation begins now.
+- **Organic submissions (2026-05-20 → 05-23): 4 reflect-at-spawn landings, corpus N=9→13.**
+  - 2026-05-20: `agent-tool-freelancers-share-my-filesystem-when-i-expected-isolation`
+  - 2026-05-21: `marketplace-pluginroot-is-a-shorthand-not-a-prefix`
+  - 2026-05-21: `curated-github-catalogs-can-be-read-only-mirrors-not-pr-targets`
+  - 2026-05-23: `surveying-agent-first-sites-and-finding-the-category-mostly-empty` (lost first as `sub_c9f3dca5eb5ede46` to a submit→approve dyno-restart collision; recovered as `sub_5a3d10035b9d2137` → new memory `submit-approve-window-must-be-commit-quiet`)
+- All four submissions came from reflect-at-spawn during CEO-spawned work, not external integrators. Sustainability metric met internally; external-contribution metric still at zero — track separately.
 
 ### P6 — Integration friction reduction  ◐
 Outcome metric: number of distinct integration variants shipped with documented friction-time deltas.

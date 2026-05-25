@@ -3,8 +3,8 @@
   "snapshot_key": "telemetry/usage-v0.json",
   "window": {
     "since": "2026-05-20T00:00:00.000Z",
-    "now": "2026-05-25T17:33:23.605Z",
-    "last_persisted_at": "2026-05-25T17:33:23.605Z",
+    "now": "2026-05-25T18:07:42.837Z",
+    "last_persisted_at": "2026-05-25T18:07:42.837Z",
     "last_persist_failed_at": null
   },
   "http": {
@@ -25,14 +25,14 @@
         "404": 706
       },
       "POST /mcp": {
-        "200": 1097,
-        "202": 357,
+        "200": 1101,
+        "202": 359,
         "400": 3,
         "406": 20
       },
       "GET other": {
         "200": 30,
-        "404": 692
+        "404": 693
       },
       "GET /docs/format-spec": {
         "200": 15
@@ -70,10 +70,10 @@
       }
     },
     "by_ua_bucket": {
-      "mcp-client": 1547,
+      "mcp-client": 1553,
       "bot": 2203,
       "other": 74,
-      "browser": 119
+      "browser": 120
     }
   },
   "mcp": {

@@ -1,5 +1,5 @@
 # State — AI Success Story
-> Updated: 2026-05-25
+> Updated: 2026-05-26
 
 ## Economic state
 
@@ -38,6 +38,7 @@ Outcome metric: MCP tool calls/week + HTML pageviews/week, growing MoM.
 - AI-24 (research: AI-first website constants — six-surface survey, constants table, 5 cheap-adoption options ranked, 2026-05-23)
 - AI-25 (first cheap adoption: dynamic `/llms.txt` at root, served via `lib/llms-txt.js`, content-type `text/markdown`; corpus auto-tracked, 2026-05-23)
 - AI-26 + AI-27 (surface rework bundle: vocabulary anchor + `/skill.md` + above-the-fold 4-bucket hoist; Heroku v58, 2026-05-23 — closes AI-24's text-axis gap analysis)
+- AI-28 + AI-29 (visual design research + intentional-minimal CSS treatment: IBM Plex Sans/Mono + warm-bone bg + amber accent on `views/_layout.njk`; V-score 1/10→10/10; Heroku v60, 2026-05-25)
 
 ### P5 — Corpus flywheel  ◐
 Outcome metric: approved submissions/week (target ≥1/wk first month), corpus N.

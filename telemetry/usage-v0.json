@@ -3,9 +3,9 @@
   "snapshot_key": "telemetry/usage-v0.json",
   "window": {
     "since": "2026-05-20T00:00:00.000Z",
-    "now": "2026-05-27T12:22:34.996Z",
-    "last_persisted_at": "2026-05-27T12:22:34.996Z",
-    "last_persist_failed_at": "2026-05-27T12:13:47.766Z"
+    "now": "2026-05-27T12:31:37.929Z",
+    "last_persisted_at": "2026-05-27T12:31:37.929Z",
+    "last_persist_failed_at": null
   },
   "http": {
     "by_route": {
@@ -25,7 +25,7 @@
         "404": 706
       },
       "POST /mcp": {
-        "200": 1463,
+        "200": 1467,
         "202": 477,
         "400": 7,
         "406": 25
@@ -71,7 +71,7 @@
       }
     },
     "by_ua_bucket": {
-      "mcp-client": 2052,
+      "mcp-client": 2056,
       "bot": 2401,
       "other": 90,
       "browser": 157
@@ -84,7 +84,7 @@
         "err": 0
       },
       "submit_story": {
-        "ok": 16,
+        "ok": 18,
         "err": 0
       },
       "submission_status": {
@@ -92,7 +92,7 @@
         "err": 0
       },
       "list_pending": {
-        "ok": 16,
+        "ok": 17,
         "err": 0
       },
       "reject_pending": {
@@ -108,6 +108,6 @@
         "err": 0
       }
     },
-    "total_calls": 60
+    "total_calls": 63
   }
 }

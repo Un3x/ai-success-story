@@ -114,9 +114,9 @@ Significant strategic decisions go into Linear comments tagged with a `decision`
 - **Scope validation** — CEO decides (launch / cut) per task, citing economic state
 - **Next-task proposals** — user decides per CEO's report
 - **Vision / state edits** — user only; CEO proposes
-- **Metric definitions** — proposed by CEO at task creation; user can override
+- **Metric definitions** — set by CEO at task creation; user can override
 
-## Honest constraints
+## Operating constraints
 
 - The CEO is not autonomous; it runs when invoked
 - Triggers don't fire on their own without scheduled invocations

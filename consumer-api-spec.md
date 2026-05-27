@@ -85,7 +85,7 @@ followed by Porter stemming. Morphological variants (`restart`/`restarts`,
           "confidence": {
             "type": "string",
             "enum": ["high", "medium", "low"],
-            "description": "Calibrated against score: high (≥50), medium (≥25), low (≥floor 10). Calibration is v0.1 (post-stemming); expect tuning as corpus grows."
+            "description": "Calibrated against score: high (≥30), medium (≥15), low (≥floor 8). Calibration is v0.2 (post-stemming recalibration); expect tuning as corpus grows."
           },
           "why_relevant": {
             "type": "string",
@@ -287,12 +287,12 @@ is microseconds.
    - If `tags` parameter supplied: `|param.tags ∩ article.tags| × 0.5` flat boost per overlap.
 3. **BM25 parameters:** `k1 = 1.2`, `b = 0.75`. IDF table pre-computed on cold start; recomputed on corpus reload.
 4. **Tie-break** by `date` descending, then `slug` ascending (deterministic for testing).
-5. **Floor:** drop results with composite score below `10`. Better to return fewer results than to dilute with noise.
+5. **Floor:** drop results with composite score below `8`. Better to return fewer results than to dilute with noise.
 6. **Confidence calibration:**
-   - `score ≥ 50` → `"high"` (aligns with the published priming-snippet `>50` fetch threshold)
-   - `25 ≤ score < 50` → `"medium"`
-   - `10 ≤ score < 25` → `"low"`
-   Calibration thresholds are v0.1 (post-stemming); expect tuning as corpus grows.
+   - `score ≥ 30` → `"high"` (aligns with the published priming-snippet `>30` fetch threshold)
+   - `15 ≤ score < 30` → `"medium"`
+   - `8 ≤ score < 15` → `"low"`
+   Calibration thresholds are v0.2 (post-stemming recalibration against observed AI-35 battery distribution); expect tuning as corpus grows.
 
 ### `why_relevant` extraction
 
@@ -378,7 +378,7 @@ Documented honestly so callers don't have to discover them by failure:
 
 1. **`why_relevant` is extractive, not interpretive.** It quotes the highest-scoring sentence but does not explain why the article matches your situation. A trailing `…` signals truncation; treat any `why_relevant` you'd quote downstream as provisional until you fetch the full article.
 2. **Frontmatter-alone is a soft-misuse vector.** Titles are summary-shaped and can be read as theses. Fetch at least `["frontmatter", "setup"]` before drawing conclusions from a title alone.
-3. **Off-topic queries may return weak matches.** The floor (`score ≥ 10`) drops pure-negative queries entirely. Above the floor, treat `confidence: "low"` as "best available, probably not what you want" and only `confidence: "high"` as a likely fit.
+3. **Off-topic queries may return weak matches.** The floor (`score ≥ 8`) drops pure-negative queries entirely. Above the floor, treat `confidence: "low"` as "best available, probably not what you want" and only `confidence: "high"` as a likely fit.
 4. **Stemming is Porter, not synonym-aware.** Morphological variants collide (`restart` ↔ `restarts` ↔ `restarted`, `plugin` ↔ `plugins`, `universal` ↔ `universe`). True synonyms do not (`subagent` ↔ `freelancer`, `wipe state` ↔ `lose data`). A known Porter wart: `deployment` stems to `deploy` while `deploys` stems to `deploi`, so the two do not collide — phrase queries with this in mind.
 5. **`aiss://index` reflects state at `generated_at`.** New articles can take until the next deploy / restart to appear (typically minutes to hours, depending on cadence).
 6. **`_version` is advisory.** A v0 client hitting a v1 server that changed a field will fail at parse time, not at version check.

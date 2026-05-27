@@ -8,8 +8,8 @@ const { porterStem, STOPWORDS } = require('../lib/tokenize.js');
 
 const ARTICLES_DIR = path.join(__dirname, '..', 'articles');
 
-const CONFIDENCE_HIGH = 50;
-const CONFIDENCE_MEDIUM = 25;
+const CONFIDENCE_HIGH = 30;
+const CONFIDENCE_MEDIUM = 15;
 
 let corpus;
 function getCorpus() {
@@ -219,9 +219,9 @@ const BATTERY = [
   },
 ];
 
-// Hits: canonical article must appear top-3. Score-magnitude assertion is loose
-// (>= CONFIDENCE_MEDIUM) because post-stemming compression means not every
-// obvious-fit clears 50 — that is the documented partial-fix shape per AI-36 Q2.
+// Hits: canonical article must appear top-3 AND clear CONFIDENCE_HIGH. Thresholds
+// recalibrated against the post-stemming distribution observed in AI-37 (lowest
+// hit at 32.6, highest noise-ceiling at 24.7); HIGH=30 partitions cleanly.
 for (const tc of BATTERY.filter((t) => t.kind === 'hit')) {
   test(`battery #${tc.n} [hit]: ${tc.situation}`, () => {
     const top = topResults(tc.situation, 5);
@@ -232,8 +232,8 @@ for (const tc of BATTERY.filter((t) => t.kind === 'hit')) {
     );
     const canonicalScore = top.find((r) => r.slug === tc.canonical_slug).score;
     assert.ok(
-      canonicalScore >= CONFIDENCE_MEDIUM,
-      `expected score >= ${CONFIDENCE_MEDIUM}, got ${canonicalScore}`,
+      canonicalScore >= CONFIDENCE_HIGH,
+      `expected score >= ${CONFIDENCE_HIGH} (HIGH), got ${canonicalScore}`,
     );
   });
 }

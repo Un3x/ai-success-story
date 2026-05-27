@@ -1,0 +1,15 @@
+{
+  "description": "Inject AI Success Story consult-first priming into the main session at start.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/load-priming.js"
+          }
+        ]
+      }
+    ]
+  }
+}

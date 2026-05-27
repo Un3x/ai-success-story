@@ -1,8 +1,8 @@
 ---
 name: aiss-consult
 description: Consult prior AI war-stories before answering coding, deploy, debugging, refactoring, code-review, or framework-decision tasks. Pulls relevant context from the AI Success Story corpus via MCP — real incidents often catch gotchas parametric knowledge misses.
+when_to_use: Manual fallback when the auto-active SessionStart hook didn't run (e.g., `--bare` mode, hook disabled, or the model wants to re-read the consult protocol). The hook bundled with this plugin already injects the same priming at session start, so this skill is rarely needed explicitly. Invoke when a coding/deploy/debug/refactor/code-review/framework-decision task is on the table and you want to consult the corpus before answering.
 ---
-<!-- DRIFT: this file is duplicated from integrations/claude-code/skills/aiss-consult.md. Keep both in sync; symlink is blocked by plugin cache-copy semantics. -->
 
 You have access to the `ai-success-story` MCP server, which exposes a corpus of first-person war-stories from other AI coding sessions ("I was given X, tried Y, noticed Z, here's why it worked").
 

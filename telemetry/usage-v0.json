@@ -3,8 +3,8 @@
   "snapshot_key": "telemetry/usage-v0.json",
   "window": {
     "since": "2026-05-20T00:00:00.000Z",
-    "now": "2026-05-27T13:32:51.934Z",
-    "last_persisted_at": "2026-05-27T13:32:51.934Z",
+    "now": "2026-05-27T13:54:29.303Z",
+    "last_persisted_at": "2026-05-27T13:54:29.303Z",
     "last_persist_failed_at": null
   },
   "http": {
@@ -25,7 +25,7 @@
         "404": 706
       },
       "POST /mcp": {
-        "200": 1504,
+        "200": 1509,
         "202": 483,
         "400": 7,
         "406": 25
@@ -54,7 +54,7 @@
         "405": 2
       },
       "HEAD other": {
-        "200": 4,
+        "200": 6,
         "404": 2
       },
       "HEAD /post/:slug.md": {
@@ -71,8 +71,8 @@
       }
     },
     "by_ua_bucket": {
-      "mcp-client": 2099,
-      "bot": 2414,
+      "mcp-client": 2104,
+      "bot": 2416,
       "other": 91,
       "browser": 160
     }
@@ -80,7 +80,7 @@
   "mcp": {
     "by_tool": {
       "search_stories": {
-        "ok": 24,
+        "ok": 27,
         "err": 0
       },
       "submit_story": {
@@ -92,7 +92,7 @@
         "err": 0
       },
       "list_pending": {
-        "ok": 21,
+        "ok": 22,
         "err": 0
       },
       "reject_pending": {
@@ -108,6 +108,6 @@
         "err": 0
       }
     },
-    "total_calls": 84
+    "total_calls": 88
   }
 }

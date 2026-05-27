@@ -27,9 +27,11 @@ in your own words — the task, the tools at hand, the load-bearing
 constraint. Returns ranked slugs with a verbatim sentence showing why each
 matched, so you can decide whether to fetch before spending tokens.
 
-**Tokenizer limitation:** lowercase + ASCII-fold + non-alphanumeric split;
-no stemming. Pluralization and morphology are not handled — pass canonical
-forms (e.g., `"linear"`, not `"linears"`).
+**Tokenizer:** lowercase + ASCII-fold + non-alphanumeric split, then a
+minimal English stopword filter (NLTK high-frequency subset, 40 words)
+followed by Porter stemming. Morphological variants (`restart`/`restarts`,
+`plugin`/`plugins`) collapse to a shared stem. True synonyms
+(`subagent`↔`freelancer`) are not handled.
 
 **Signature**
 
@@ -83,7 +85,7 @@ forms (e.g., `"linear"`, not `"linears"`).
           "confidence": {
             "type": "string",
             "enum": ["high", "medium", "low"],
-            "description": "Calibrated against score: high (≥2.0), medium (≥0.5), low (≥floor 0.1). Calibration is v0; expect tuning."
+            "description": "Calibrated against score: high (≥50), medium (≥25), low (≥floor 10). Calibration is v0.1 (post-stemming); expect tuning as corpus grows."
           },
           "why_relevant": {
             "type": "string",
@@ -276,7 +278,7 @@ articles).
 Computed in-memory on every `search_stories` call. At ≤ 50 articles this
 is microseconds.
 
-1. **Tokenize** `situation` and each article's `setup + attempt + title + tags`: lowercase, ASCII-fold, split on non-alphanumeric. No stemming, no stopword removal.
+1. **Tokenize** `situation` and each article's `setup + attempt + title + tags`: lowercase, ASCII-fold, split on non-alphanumeric, drop minimal English stopwords (NLTK high-frequency subset, 40 words), Porter-stem the remainder. Applied symmetrically at index time and query time.
 2. **Per-article score** = weighted sum:
    - `BM25(situation tokens, setup) × 3.0` — Setup is where the constraint lives.
    - `BM25(situation tokens, attempt) × 1.5` — matches tool / action language.
@@ -285,12 +287,12 @@ is microseconds.
    - If `tags` parameter supplied: `|param.tags ∩ article.tags| × 0.5` flat boost per overlap.
 3. **BM25 parameters:** `k1 = 1.2`, `b = 0.75`. IDF table pre-computed on cold start; recomputed on corpus reload.
 4. **Tie-break** by `date` descending, then `slug` ascending (deterministic for testing).
-5. **Floor:** drop results with composite score below `0.1`. Better to return fewer results than to dilute with noise.
+5. **Floor:** drop results with composite score below `10`. Better to return fewer results than to dilute with noise.
 6. **Confidence calibration:**
-   - `score ≥ 2.0` → `"high"`
-   - `0.5 ≤ score < 2.0` → `"medium"`
-   - `0.1 ≤ score < 0.5` → `"low"`
-   Calibration thresholds are v0 defaults; expect tuning as corpus grows.
+   - `score ≥ 50` → `"high"` (aligns with the published priming-snippet `>50` fetch threshold)
+   - `25 ≤ score < 50` → `"medium"`
+   - `10 ≤ score < 25` → `"low"`
+   Calibration thresholds are v0.1 (post-stemming); expect tuning as corpus grows.
 
 ### `why_relevant` extraction
 
@@ -376,8 +378,8 @@ Documented honestly so callers don't have to discover them by failure:
 
 1. **`why_relevant` is extractive, not interpretive.** It quotes the highest-scoring sentence but does not explain why the article matches your situation. A trailing `…` signals truncation; treat any `why_relevant` you'd quote downstream as provisional until you fetch the full article.
 2. **Frontmatter-alone is a soft-misuse vector.** Titles are summary-shaped and can be read as theses. Fetch at least `["frontmatter", "setup"]` before drawing conclusions from a title alone.
-3. **Off-topic queries may return weak matches.** The floor (`score ≥ 0.1`) catches most off-topic cases, but a tiny corpus + non-stemming tokenizer + token leakage from common words can occasionally surface a `low`-confidence match. Treat `confidence: "low"` as "best available, probably not what you want."
-4. **No stemming / no stopword removal.** `linear` and `linears` rank differently. Pass canonical forms.
+3. **Off-topic queries may return weak matches.** The floor (`score ≥ 10`) drops pure-negative queries entirely. Above the floor, treat `confidence: "low"` as "best available, probably not what you want" and only `confidence: "high"` as a likely fit.
+4. **Stemming is Porter, not synonym-aware.** Morphological variants collide (`restart` ↔ `restarts` ↔ `restarted`, `plugin` ↔ `plugins`, `universal` ↔ `universe`). True synonyms do not (`subagent` ↔ `freelancer`, `wipe state` ↔ `lose data`). A known Porter wart: `deployment` stems to `deploy` while `deploys` stems to `deploi`, so the two do not collide — phrase queries with this in mind.
 5. **`aiss://index` reflects state at `generated_at`.** New articles can take until the next deploy / restart to appear (typically minutes to hours, depending on cadence).
 6. **`_version` is advisory.** A v0 client hitting a v1 server that changed a field will fail at parse time, not at version check.
 7. **No composition.** Articles cannot point to each other via API; cross-references live in prose only. Will be added (as additive `related_slugs` in frontmatter + this spec) when corpus > 5.
@@ -410,7 +412,7 @@ search_stories(
       {
         "slug": "seed-linear-bulk-edit-read-mutate-write",
         "title": "Bulk-editing Linear issues by reading fully before writing fully",
-        "score": 4.2,
+        "score": 102.7,
         "confidence": "high",
         "why_relevant": "The Linear save_issue endpoint has no merge semantics: a write replaces the entire record."
       }

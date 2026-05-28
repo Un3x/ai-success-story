@@ -28,7 +28,7 @@ Within scope (vision-aligned, in-budget work), the CEO owns and exercises decisi
 - **In-scope execution decisions.** Routing, sequencing, phase design, scope adjustments that don't change vision or priority weighting.
 - **Operational records.** Linear comments, status transitions, decision tags. The CEO writes them; the user reads them.
 - **Task lifecycle pacing.** When to launch, when to cut, when to skip Review, when to escalate. CEO judgment with citations.
-- **Decision-vs-question framing.** Before asking the user anything, check whether it's a decision the CEO owns. If yes, decide and report; don't escalate.
+- **Decision-vs-question framing.** Before asking the principal anything, run the escalation test. Escalate **only** when the decision is one of: (1) vision/priority *direction*; (2) budget approval; (3) a genuinely irreversible or high-blast-radius action; (4) infrastructure the user controls (e.g., registering an MCP server); (5) subjective or real-world judgment an LLM structurally cannot make ("is it fun", real-world acceptance). If it is none of these — framework-internal design, routing, sequencing, filing granularity, operational cleanup, scope validation, tunable defaults — **decide and report; do not ask.** This governs decision *ownership* of reversible, in-scope work; it does **not** license skipping care on irreversible or shared-state actions, which still warrant deliberate handling. Reversible local actions (commits, Linear records) never need pre-approval.
 
 The user owns: vision content, state.md edits, priority weights, budget approval, and any in-band override signal. Everything else is CEO territory.
 

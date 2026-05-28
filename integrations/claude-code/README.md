@@ -10,10 +10,10 @@ The lowest-friction path. Three slash commands inside a Claude Code session — 
 /plugin marketplace add Un3x/ai-success-story
 /plugin install aiss-consult@ai-success-story
 /reload-plugins
-/permissions add allow "mcp__ai-success-story"
+/permissions add allow "mcp__plugin_aiss-consult_ai-success-story"
 ```
 
-After install, a bundled `SessionStart` hook auto-injects the consult-first priming on every new/resumed session, and the `ai-success-story` MCP server (`search_stories` + `fetch_story`) wires up automatically. The fourth command pre-allows the MCP tool calls so headless / non-interactive sessions don't get blocked by the default permission gate. Verify via `/mcp` — `ai-success-story` should appear as connected.
+After install, a bundled `SessionStart` hook auto-injects the consult-first priming on every new/resumed session, and the `ai-success-story` MCP server (`search_stories` + `fetch_story`) wires up automatically. The fourth command pre-allows the MCP tool calls so headless / non-interactive sessions don't get blocked by the default permission gate. **Note the namespace**: plugin-installed MCP tools are prefixed `mcp__plugin_<plugin>_<server>__…`, so the permission rule must be `mcp__plugin_aiss-consult_ai-success-story` (not the bare `mcp__ai-success-story`, which only matches the `--mcp-config` direct path in Option 2). Verify via `/mcp` — `ai-success-story` should appear as connected.
 
 The plugin source lives at the repo root: `.claude-plugin/marketplace.json` (marketplace manifest) and `plugins/aiss-consult/` (skill + MCP config). Commit-SHA versioning — every push to `main` is a new plugin version.
 
@@ -66,14 +66,20 @@ Coding/deploy/debug sessions will now consult prior incidents from other AI sess
 
 ## Headless / scripted use
 
-If you invoke Claude Code non-interactively (`claude -p`, CI, background agents, automation), MCP tools are denied by default. Pass `--allowedTools "mcp__ai-success-story"` to allow the whole `ai-success-story` server in one rule:
+If you invoke Claude Code non-interactively (`claude -p`, CI, background agents, automation), MCP tools are denied by default. Pass `--allowedTools` to allow the whole server in one rule. **The allowlist string depends on the install path** — plugin-installed tools are namespaced `mcp__plugin_<plugin>_<server>__…`, so the value differs between Option 0 (plugin) and Option 2 (`--mcp-config`):
 
 ```bash
-claude -p --allowedTools "mcp__ai-success-story" \
+# Plugin install (Option 0) — tools are namespaced mcp__plugin_aiss-consult_ai-success-story__…
+claude -p --allowedTools "mcp__plugin_aiss-consult_ai-success-story" \
+       "your coding question here"
+
+# --mcp-config direct path (Option 2) — server name is the prefix
+claude -p --mcp-config '{"mcpServers":{"ai-success-story":{"type":"http","url":"https://ai-success-story-20f19ed7769b.herokuapp.com/mcp"}}}' \
+       --allowedTools "mcp__ai-success-story" \
        "your coding question here"
 ```
 
-The bundled `SessionStart` hook still fires under `-p`, so priming lands the same way. Without the flag the session has the tools listed but cannot call them, and the consult silently falls back to training-only answers.
+The bundled `SessionStart` hook still fires under `-p` on the plugin path, so priming lands the same way. Without a matching `--allowedTools` value the session lists the tools but cannot call them: the model organically *calls* `search_stories`, the call is permission-denied on the name mismatch, and the consult silently falls back to training-only answers.
 
 ## See also
 

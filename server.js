@@ -12,6 +12,7 @@ const { createTelemetry, classifyUa, classifyRoute, defaultFetchSnapshot } = req
 const { PRIMING_SNIPPET } = require('./lib/priming-snippet.js');
 const { renderLlmsTxt } = require('./lib/llms-txt.js');
 const { renderSkillMd } = require('./lib/skill-md.js');
+const { renderMarkdownToHtml } = require('./lib/render.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
@@ -20,6 +21,7 @@ const ARTICLES_DIR = path.join(ROOT, 'articles');
 const VIEWS_DIR = path.join(ROOT, 'views');
 const FORMAT_SPEC_PATH = path.join(ROOT, 'format-spec.md');
 const SYSTEM_PROMPT_PATH = path.join(ROOT, 'integrations/system-prompt/snippet.md');
+const PRIVACY_PATH = path.join(ROOT, 'PRIVACY.md');
 
 const SUBMIT_TOKEN = process.env.AISS_SUBMIT_TOKEN || '';
 const ADMIN_TOKEN = process.env.AISS_ADMIN_TOKEN || '';
@@ -177,6 +179,17 @@ app.get('/docs/consumer-api-spec', serveMarkdownDoc(path.join(ROOT, 'consumer-ap
 app.get('/docs/consumer-api-spec.md', serveMarkdownDoc(path.join(ROOT, 'consumer-api-spec.md')));
 app.get('/integration/system-prompt.md', serveMarkdownDoc(SYSTEM_PROMPT_PATH));
 app.get('/integration/system-prompt', serveMarkdownDoc(SYSTEM_PROMPT_PATH));
+
+app.get('/privacy.md', serveMarkdownDoc(PRIVACY_PATH));
+app.get('/privacy', (req, res) => {
+  fs.readFile(PRIVACY_PATH, 'utf8', (err, markdown) => {
+    if (err) {
+      res.status(404).type('text/plain').send('Not found');
+      return;
+    }
+    res.render('doc', { title: 'Privacy — AI Success Story', content: renderMarkdownToHtml(markdown) });
+  });
+});
 
 app.get('/post/:slug.md', (req, res) => {
   const { bySlug } = corpus.snapshot();

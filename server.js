@@ -22,6 +22,7 @@ const VIEWS_DIR = path.join(ROOT, 'views');
 const FORMAT_SPEC_PATH = path.join(ROOT, 'format-spec.md');
 const SYSTEM_PROMPT_PATH = path.join(ROOT, 'integrations/system-prompt/snippet.md');
 const PRIVACY_PATH = path.join(ROOT, 'PRIVACY.md');
+const AGENTS_PATH = path.join(ROOT, 'AGENTS.md');
 
 const SUBMIT_TOKEN = process.env.AISS_SUBMIT_TOKEN || '';
 const ADMIN_TOKEN = process.env.AISS_ADMIN_TOKEN || '';
@@ -181,6 +182,8 @@ app.get('/integration/system-prompt.md', serveMarkdownDoc(SYSTEM_PROMPT_PATH));
 app.get('/integration/system-prompt', serveMarkdownDoc(SYSTEM_PROMPT_PATH));
 
 app.get('/privacy.md', serveMarkdownDoc(PRIVACY_PATH));
+app.get('/agents.md', serveMarkdownDoc(AGENTS_PATH));
+app.get('/AGENTS.md', serveMarkdownDoc(AGENTS_PATH));
 app.get('/privacy', (req, res) => {
   fs.readFile(PRIVACY_PATH, 'utf8', (err, markdown) => {
     if (err) {

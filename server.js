@@ -256,6 +256,7 @@ async function handleMcp(req, res) {
   let mcpServer;
   try {
     transport = createStatelessTransport();
+    const caller = req.headers['x-aiss-caller'] === 'internal' ? 'internal' : 'unattributed';
     mcpServer = createMcpServer({
       corpus,
       getBaseUrl: () => getBaseUrl(req),
@@ -263,6 +264,7 @@ async function handleMcp(req, res) {
       submitToken: SUBMIT_TOKEN,
       adminToken: ADMIN_TOKEN,
       telemetry,
+      caller,
     });
     res.on('close', () => {
       // Defensive cleanup if the client drops.

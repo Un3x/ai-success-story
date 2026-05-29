@@ -52,6 +52,78 @@ test('recordHttp + recordMcpCall increment counters as expected', async () => {
   assert.equal(snap.mcp.total_calls, 3);
 });
 
+test('recordMcpCall buckets by_caller: internal marker → internal, unmarked → unattributed', async () => {
+  const telemetry = createTelemetry({ logger: silentLogger });
+  await telemetry.ready;
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: true, caller: 'internal' });
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: false, caller: 'internal' });
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: true });
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: true, caller: 'external' });
+
+  const snap = telemetry.snapshot();
+  const t = snap.mcp.by_tool.search_stories;
+  // Flat ok/err totals stay intact (aggregate of all buckets) so /stats and the
+  // AI-49 historical cumulative read are unaffected.
+  assert.equal(t.ok, 3);
+  assert.equal(t.err, 1);
+  // internal marker buckets as internal.
+  assert.equal(t.by_caller.internal.ok, 1);
+  assert.equal(t.by_caller.internal.err, 1);
+  // Absent marker AND any non-"internal" value both bucket as unattributed
+  // (never "external" — we can only prove internal; see Amendment 1).
+  assert.equal(t.by_caller.unattributed.ok, 2);
+  assert.equal(t.by_caller.unattributed.err, 0);
+  // The "external" label must not appear anywhere in the data.
+  assert.ok(!('external' in t.by_caller));
+});
+
+test('by_caller survives cold-start resume round-trip and stays additive', async () => {
+  const remote = {
+    version: 'v0',
+    snapshot_key: 'telemetry/usage-v0.json',
+    window: { since: '2026-05-01T00:00:00.000Z', now: '2026-05-19T00:00:00.000Z', last_persisted_at: '2026-05-19T00:00:00.000Z' },
+    http: { by_route: {}, by_ua_bucket: {} },
+    mcp: {
+      by_tool: {
+        search_stories: { ok: 5, err: 0, by_caller: { internal: { ok: 3, err: 0 }, unattributed: { ok: 2, err: 0 } } },
+      },
+      total_calls: 5,
+    },
+  };
+  const fetchSnapshot = async () => remote;
+  const telemetry = createTelemetry({ fetchSnapshot, logger: silentLogger });
+  await telemetry.ready;
+  // Resumed buckets are preserved.
+  assert.equal(telemetry.snapshot().mcp.by_tool.search_stories.by_caller.internal.ok, 3);
+  // A new post-resume call increments both flat and bucketed counters.
+  telemetry.recordMcpCall({ tool: 'search_stories', ok: true, caller: 'internal' });
+  const snap = telemetry.snapshot();
+  assert.equal(snap.mcp.by_tool.search_stories.ok, 6);
+  assert.equal(snap.mcp.by_tool.search_stories.by_caller.internal.ok, 4);
+  assert.equal(snap.mcp.by_tool.search_stories.by_caller.unattributed.ok, 2);
+});
+
+test('legacy snapshot without by_caller resumes and gains the sub-bucket on first call', async () => {
+  const legacyRemote = {
+    version: 'v0',
+    snapshot_key: 'telemetry/usage-v0.json',
+    window: { since: '2026-05-01T00:00:00.000Z', now: '2026-05-19T00:00:00.000Z', last_persisted_at: '2026-05-19T00:00:00.000Z' },
+    http: { by_route: {}, by_ua_bucket: {} },
+    mcp: { by_tool: { fetch_story: { ok: 9, err: 1 } }, total_calls: 10 },
+  };
+  const fetchSnapshot = async () => legacyRemote;
+  const telemetry = createTelemetry({ fetchSnapshot, logger: silentLogger });
+  await telemetry.ready;
+  // Legacy per-tool object has no by_caller — must not throw on read.
+  assert.equal(telemetry.snapshot().mcp.by_tool.fetch_story.ok, 9);
+  assert.equal(telemetry.snapshot().mcp.by_tool.fetch_story.by_caller, undefined);
+  // First post-resume call creates by_caller without losing the legacy totals.
+  telemetry.recordMcpCall({ tool: 'fetch_story', ok: true, caller: 'internal' });
+  const t = telemetry.snapshot().mcp.by_tool.fetch_story;
+  assert.equal(t.ok, 10);
+  assert.equal(t.by_caller.internal.ok, 1);
+});
+
 test('flushIfDue is throttled: not due until ceiling or interval reached', async () => {
   const calls = [];
   const githubCommit = async ({ path, content, message }) => {

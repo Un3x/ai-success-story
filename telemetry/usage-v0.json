@@ -3,8 +3,8 @@
   "snapshot_key": "telemetry/usage-v0.json",
   "window": {
     "since": "2026-05-20T00:00:00.000Z",
-    "now": "2026-05-29T09:57:14.945Z",
-    "last_persisted_at": "2026-05-29T09:57:14.945Z",
+    "now": "2026-05-29T10:04:45.138Z",
+    "last_persisted_at": "2026-05-29T10:04:45.138Z",
     "last_persist_failed_at": null
   },
   "http": {
@@ -13,15 +13,15 @@
         "406": 28
       },
       "GET /": {
-        "200": 866,
+        "200": 869,
         "304": 4
       },
       "GET /stats": {
-        "200": 44,
+        "200": 45,
         "401": 2
       },
       "GET /post/:slug/": {
-        "200": 86,
+        "200": 87,
         "404": 707
       },
       "POST /mcp": {
@@ -31,20 +31,20 @@
         "406": 29
       },
       "GET other": {
-        "200": 59,
+        "200": 64,
         "404": 1202
       },
       "GET /docs/format-spec": {
         "200": 23
       },
       "GET /.well-known/ai-success-story.json": {
-        "200": 20
+        "200": 23
       },
       "HEAD /": {
         "200": 3
       },
       "GET /post/:slug.md": {
-        "200": 81,
+        "200": 84,
         "404": 2
       },
       "GET /docs/consumer-api-spec": {
@@ -74,11 +74,14 @@
       },
       "GET /privacy.md": {
         "200": 2
+      },
+      "GET /agents.md": {
+        "200": 2
       }
     },
     "by_ua_bucket": {
       "mcp-client": 2616,
-      "bot": 2759,
+      "bot": 2777,
       "other": 133,
       "browser": 190
     }
